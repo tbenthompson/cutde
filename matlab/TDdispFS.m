@@ -207,7 +207,6 @@ u = bx.*Fi+u;
 v = by.*Fi+v;
 w = bz.*Fi+w;
 
-Fi
 
 % Transform the complete displacement vector components from TDCS into EFCS
 [ue,un,uv] = CoordTrans(u,v,w,[Vnorm Vstrike Vdip]);

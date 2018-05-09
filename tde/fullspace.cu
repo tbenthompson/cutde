@@ -94,6 +94,7 @@ WITHIN_KERNEL Real${dim} make${dim}(
     % endfor
     return out;
 }
+
 % endfor
 
 
@@ -248,7 +249,7 @@ WITHIN_KERNEL Real3 TDSetupD(Real3 obs, Real alpha, Real3 slip, Real nu, Real3 T
     return make3(uvw.x, v, w);
 }
 
-Real6 AngDisStrain(Real x, Real y, Real z, Real alpha, Real bx, Real by, Real bz, Real nu) {
+WITHIN_KERNEL Real6 AngDisStrain(Real x, Real y, Real z, Real alpha, Real bx, Real by, Real bz, Real nu) {
     // AngDisStrain calculates the strains associated with an angular 
     // dislocation in an elastic full-space.
 
@@ -413,7 +414,7 @@ WITHIN_KERNEL Real6 TDSetupS(Real3 obs, Real alpha, Real3 slip, Real nu,
     %endfor
 </%def>
 
-<%def name="stress()">
+<%def name="strain()">
     Real6 out;
     if (mode == 1) {
         // Calculate first angular dislocation contribution
@@ -435,7 +436,15 @@ WITHIN_KERNEL Real6 TDSetupS(Real3 obs, Real alpha, Real3 slip, Real nu,
         out = make6(NAN, NAN, NAN, NAN, NAN, NAN);
     }
 
+
     Real6 final = tensor_transform3(Vnorm, Vstrike, Vdip, out);
+
+    /*Real6 final = tensor_transform3(*/
+    /*    make3(Vnorm.x, Vstrike.x, Vdip.x),*/
+    /*    make3(Vnorm.y, Vstrike.y, Vdip.y),*/
+    /*    make3(Vnorm.z, Vstrike.z, Vdip.z),*/
+    /*    out*/
+    /*);*/
 
     %for d in range(6):
         results[i * 6 + ${d}] = final.${comp(d)};
@@ -449,7 +458,7 @@ void ${name}_fullspace(GLOBAL_MEM Real* results, int n_pairs,
     GLOBAL_MEM Real* slips, Real nu)
 {
     int i = get_global_id(0);
-    if (i > n_pairs) {
+    if (i >= n_pairs) {
         return;
     }
     Real3 obs;
@@ -500,4 +509,4 @@ void ${name}_fullspace(GLOBAL_MEM Real* results, int n_pairs,
 
 
 ${tde("disp", disp)}
-${tde("stress", stress)}
+${tde("strain", strain)}
