@@ -11,7 +11,7 @@ except (IOError, ImportError):
 setup(
     packages = ['cutde'],
 
-    install_requires = [],
+    install_requires = ['cluda'],
     zip_safe = False,
     include_package_data = True,
 
