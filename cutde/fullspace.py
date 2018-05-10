@@ -1,8 +1,8 @@
 import numpy as np
 
 import cluda
-import tde
-from tde.TDdispFS import TDdispFS
+import cutde
+from cutde.TDdispFS import TDdispFS
 
 def py_disp(obs_pt, tri, slip, nu):
     return TDdispFS(obs_pt, tri, slip, nu)
@@ -18,7 +18,7 @@ def call_clu(obs_pts, tris, slips, nu, fnc_name, out_dim):
     )
     module = cluda.load_gpu(
         'fullspace.cu', tmpl_args = gpu_config,
-        tmpl_dir = tde.source_dir
+        tmpl_dir = cutde.source_dir
     )
 
     gpu_results = cluda.empty_gpu(n * out_dim, float_type)

@@ -3,7 +3,7 @@ import numpy as np
 import scipy.io
 
 
-import tde.fullspace
+import cutde.fullspace
 
 def get_pt_grid():
     n = 101;
@@ -40,7 +40,7 @@ def py_tde_tester(setup_fnc, N_test = -1):
     start = time.time()
     for i in range(N_test):
         pt = test_pts[i,:]
-        results[i,:] = tde.fullspace.py_disp(pt, tri, slip, 0.25)
+        results[i,:] = cutde.fullspace.py_disp(pt, tri, slip, 0.25)
         np.testing.assert_almost_equal(results[i,0], correct['UEf'][i,0])
         np.testing.assert_almost_equal(results[i,1], correct['UNf'][i,0])
         np.testing.assert_almost_equal(results[i,2], correct['UVf'][i,0])
@@ -67,9 +67,9 @@ def cluda_tde_tester(setup_fnc):
     tris = np.array([tri] * N_test)
     slips = np.array([slip] * N_test)
 
-    # disp = tde.fullspace.clu_disp(test_pts[:N_test], tris, slips, 0.25)
-    strain = tde.fullspace.clu_strain(test_pts[:N_test], tris, slips, nu)
-    stress = tde.fullspace.strain_to_stress(strain, sm, nu)
+    # disp = cutde.fullspace.clu_disp(test_pts[:N_test], tris, slips, 0.25)
+    strain = cutde.fullspace.clu_strain(test_pts[:N_test], tris, slips, nu)
+    stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
 
     # np.testing.assert_almost_equal(disp[:,0], correct['UEf'][:N_test,0])
     # np.testing.assert_almost_equal(disp[:,1], correct['UNf'][:N_test,0])

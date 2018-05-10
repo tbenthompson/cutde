@@ -9,3 +9,4 @@ __pycache__
 tests/result_complex.mat
 tests/result_simple.mat
 archive
+dist

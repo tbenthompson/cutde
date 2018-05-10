@@ -1,0 +1,3 @@
+include cutde/fullspace.cu
+include README.md
+include VERSION
