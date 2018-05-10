@@ -6,4 +6,6 @@ __pycache__
 .pytest_cache
 .cache
 *.egg-info
-
+tests/result_complex.mat
+tests/result_simple.mat
+archive
