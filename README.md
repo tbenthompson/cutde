@@ -1,5 +1,6 @@
 # cutde
-Python + CUDA TDEs from Nikkhoo and Walters 2015
+
+### Python + CUDA TDEs from Nikkhoo and Walters 2015
 
 Howdy! Usage is really simple:
 
@@ -22,3 +23,12 @@ stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
 ```
 
 that converts from stress to strain assuming isotropic linear elasticity. `sm` is the shear modulus and `nu` is the Poisson ratio.
+
+### Installation
+
+Just run 
+```
+pip install cutde
+```
+
+That'll also install the [`cluda` dependency](https://github.com/tbenthompson/cluda). You might also need to install PyCUDA or PyOpenCL if you don't already have one or the other installed.
