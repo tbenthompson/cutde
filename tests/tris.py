@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from tectosaur.mesh.mesh_gen import make_rect
+from mesh_gen import make_rect
 
 import tde.fullspace
 

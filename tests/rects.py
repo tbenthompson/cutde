@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from tris import gaussian, gauss_params, sm, nu, plot_tris
 from tris import main as tri_main
-from tectosaur.mesh.mesh_gen import make_rect, rect_points
+from mesh_gen import make_rect
 
 import tde.fullspace
 
@@ -89,19 +89,3 @@ def main():
 if __name__ == "__main__":
     main()
     tri_main()
-
-# def mesh_topology(nx, ny):
-#     def v_idx(i, j):
-#         return j * nx + i
-#
-#     rects = []
-#     for i in range(nx - 1):
-#         for j in range(ny - 1):
-#             top_left = v_idx(i, j)
-#             top_right = v_idx(i + 1, j)
-#             bottom_left = v_idx(i, j + 1)
-#             bottom_right = v_idx(i + 1, j + 1)
-#             rects.append([top_left, top_right, bottom_right, bottom_left])
-#     return np.array(rects, dtype = np.int)
-    # pts, tris = make_rect(n, n, corners)
-    # rects = mesh_topology(n, n)

@@ -1,6 +1,6 @@
 import numpy as np
 
-import tectosaur.util.gpu as gpu
+import cluda
 import tde
 from tde.TDdispFS import TDdispFS
 
@@ -14,17 +14,17 @@ def call_clu(obs_pts, tris, slips, nu, fnc_name, out_dim):
     float_type = np.float64
     gpu_config = dict(
         block_size = block_size,
-        float_type = gpu.np_to_c_type(float_type)
+        float_type = cluda.np_to_c_type(float_type)
     )
-    module = gpu.load_gpu(
+    module = cluda.load_gpu(
         'fullspace.cu', tmpl_args = gpu_config,
         tmpl_dir = tde.source_dir
     )
 
-    gpu_results = gpu.empty_gpu(n * out_dim, float_type)
-    gpu_obs_pts = gpu.to_gpu(obs_pts, float_type)
-    gpu_tris = gpu.to_gpu(tris, float_type)
-    gpu_slips = gpu.to_gpu(slips, float_type)
+    gpu_results = cluda.empty_gpu(n * out_dim, float_type)
+    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
+    gpu_tris = cluda.to_gpu(tris, float_type)
+    gpu_slips = cluda.to_gpu(slips, float_type)
 
     getattr(module, fnc_name)(
         gpu_results, np.int32(n), gpu_obs_pts, gpu_tris, gpu_slips, float_type(nu),
