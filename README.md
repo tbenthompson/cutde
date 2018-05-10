@@ -16,7 +16,9 @@ slips is a `np.array` with shape `(N, 3)` and the last parameter is the Poisson 
 
 `slip[:,0]` is the strike slip component, while component 1 is the dip slip and component 2 is the tensile/opening component.
 
-There is also a function
+The output `disp` is a `(N, 3)` array with displacement components in the x, y, z directions. The output `strain` is a `(N, 6)` array representing a symmetric tensor. `strain[:,0]` is the xx component of strain, 1 is yy, 2 is zz, 3 is xy, 4 is xz, and 5 is  yz.
+
+There is also a function:
 
 ```
 stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
