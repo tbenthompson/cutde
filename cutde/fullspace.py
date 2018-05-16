@@ -8,6 +8,13 @@ def py_disp(obs_pt, tri, slip, nu):
     return TDdispFS(obs_pt, tri, slip, nu)
 
 def call_clu(obs_pts, tris, slips, nu, fnc_name, out_dim):
+    assert(obs_pts.shape[1] == 3)
+    assert(tris.shape[0] == obs_pts.shape[0])
+    assert(tris.shape[1] == 3)
+    assert(tris.shape[2] == 3)
+    assert(slips.shape[0] == obs_pts.shape[0])
+    assert(slips.shape[1] == 3)
+
     n = obs_pts.shape[0]
     block_size = 128
     n_blocks = int(np.ceil(n / block_size))

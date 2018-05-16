@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 
 from tris import gaussian, gauss_params, sm, nu, plot_tris
 from tris import main as tri_main
-from mesh_gen import make_rect
+from mesh_gen import make_rect, rect_points
 
-import tde.fullspace
+import cutde.fullspace
 
 n = 50
 corners = [[-1, 0, 1], [-1, 0, -1], [1, 0, -1], [1, 0, 1]]
@@ -74,9 +74,9 @@ def main():
     strain = np.empty((n_rects, 6))
     for i in range(n_rects):
         obs_pts = np.tile(rect_centers[i,np.newaxis,:], (n_tris, 1))
-        all_strains = tde.fullspace.clu_strain(obs_pts, tri_pts, slip_tris, nu)
+        all_strains = cutde.fullspace.clu_strain(obs_pts, tri_pts, slip_tris, nu)
         strain[i, :] = np.sum(all_strains, axis = 0)
-    stress = tde.fullspace.strain_to_stress(strain, sm, nu)
+    stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
 
     stress_tris = dofs_to_tris(stress)
     # for d in range(6):

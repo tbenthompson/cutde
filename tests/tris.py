@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 from mesh_gen import make_rect
 
-import tde.fullspace
+import cutde.fullspace
 
 def gaussian(a, b, c, x):
     # return np.ones_like(x)
@@ -57,8 +57,8 @@ def main():
     # tiled_tris = np.tile(tri_pts[np.newaxis, :, :, :], (n_tris, 1, 1, 1)).reshape((-1,3,3))
     # tiled_slip = np.tile(slip[np.newaxis, :, :], (n_tris, 1, 1)).reshape((-1,3))
     # tiled_centers = np.tile(tri_centers[:, np.newaxis, :], (1, n_tris, 1)).reshape((-1,3))
-    # strain = tde.fullspace.clu_strain(tiled_centers, tiled_tris, tiled_slip, nu)
-    # stress = tde.fullspace.strain_to_stress(strain, sm, nu)
+    # strain = cutde.fullspace.clu_strain(tiled_centers, tiled_tris, tiled_slip, nu)
+    # stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
     # strain = strain.reshape((n_tris, n_tris, 6))
     # stress = stress.reshape((n_tris, n_tris, 6))
     # stress_at_centers = np.sum(stress, axis = 1)
@@ -67,10 +67,10 @@ def main():
     for i in range(n_tris):
         obs_pts = np.tile(tri_centers[i,np.newaxis,:], (n_tris, 1))
         strain[i, :] = np.sum(
-            tde.fullspace.clu_strain(obs_pts, tri_pts, slip, nu),
+            cutde.fullspace.clu_strain(obs_pts, tri_pts, slip, nu),
             axis = 0
         )
-    stress = tde.fullspace.strain_to_stress(strain, sm, nu)
+    stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
 
     plot_tris(m, stress[:,3], 'trisxy')
     plot_tris(m, stress[:,5], 'trisyz')
