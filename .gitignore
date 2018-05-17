@@ -10,3 +10,4 @@ tests/result_complex.mat
 tests/result_simple.mat
 archive
 dist
+*.tar.gz

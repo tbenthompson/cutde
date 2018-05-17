@@ -1,34 +1,23 @@
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-from mesh_gen import make_rect
-
 import cutde.fullspace
 
-def gaussian(a, b, c, x):
-    # return np.ones_like(x)
-    return a * np.exp(-((x - b) ** 2) / (2 * c ** 2))
+import common
 
 n = 50
 gauss_params = (1.0, 0.0, 0.3)
 sm = 1.0
 nu = 0.25
-
-def plot_tris(m, field, name):
-    plt.figure(figsize = (15,15))
-    plt.title(name)
-    plt.tripcolor(m[0][:,0], m[0][:,2], m[1], field)
-    plt.colorbar()
-    plt.xlabel('x')
-    plt.ylabel('z')
-    plt.savefig(name + '.pdf')
-    # plt.show()
+folder = 'results/tris'
+common.check_folder(folder)
 
 def main():
-    m = make_rect(
+    m = common.rect_to_tri_mesh(*common.make_rect_of_rects(
         n, n,
         [[-1, 0, 1], [-1, 0, -1], [1, 0, -1], [1, 0, 1]]
-    )
+    ))
 
     n_tris = m[1].shape[0]
     tri_pts = m[0][m[1]]
@@ -37,11 +26,11 @@ def main():
     plt.figure(figsize = (15,15))
     plt.triplot(m[0][:,0], m[0][:,2], m[1])
     plt.plot(tri_centers[:, 0], tri_centers[:, 2], '*')
-    plt.savefig('tri_setup.pdf')
+    plt.savefig(os.path.join(folder, 'tri_setup.pdf'))
     # plt.show()
 
     dist = np.linalg.norm(tri_centers, axis = 1)
-    strike_slip = gaussian(*gauss_params, dist)
+    strike_slip = common.gaussian(*gauss_params, dist)
     slip = np.zeros((strike_slip.shape[0], 3))
     slip[:,0] = strike_slip
 
@@ -72,8 +61,8 @@ def main():
         )
     stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
 
-    plot_tris(m, stress[:,3], 'trisxy')
-    plot_tris(m, stress[:,5], 'trisyz')
+    common.plot_tris(m, stress[:,3], 'trisxy', folder)
+    common.plot_tris(m, stress[:,5], 'trisyz', folder)
 
 if __name__ == "__main__":
     main()
