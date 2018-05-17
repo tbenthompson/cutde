@@ -12,7 +12,9 @@ strain = cutde.fullspace.clu_strain(pts, tris, slips, nu)
 ```
 
 where `pts` is a `np.array` with shape `(N, 3)`, tris is a `np.array` with shape `(N, 3, 3)`, 
-slips is a `np.array` with shape `(N, 3)` and the last parameter is the Poisson ratio.
+slips is a `np.array` with shape `(N, 3)` and the last parameter is the Poisson ratio. 
+
+IMPORTANT: N should be the same for all these arrays. There is exactly one triangle and slip value used for each observation point. 
 
 `slip[:,0]` is the strike slip component, while component 1 is the dip slip and component 2 is the tensile/opening component.
 
