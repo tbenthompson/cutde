@@ -4,15 +4,13 @@ import matplotlib.pyplot as plt
 
 import common
 
-import cutde.fullspace
-
 n = 50
 gauss_params = (1.0, 0.0, 0.3)
 sm = 1.0
 nu = 0.25
 corners = [[-1, 0, 1], [-1, 0, -1], [1, 0, -1], [1, 0, 1]]
-tri_srces = True
-rotate = True
+tri_srces = False
+rotate = False
 if tri_srces:
     folder = 'results/rectobs_trisrc'
 else:
@@ -26,8 +24,6 @@ def main():
     pts, tris = common.build_weird_tri_mesh(pts, rects)
     if rotate:
         pts = pts.dot(np.array([[0, 0, -1], [0, 1, 0], [1, 0, 0]]))
-    # plt.triplot(pts[:, 0], pts[:, 2], tris)
-    # plt.show()
 
     n_tris = tris.shape[0]
     n_rects = rects.shape[0]
@@ -57,16 +53,9 @@ def main():
 
     common.plot_tris((pts, tris), slip_tris[:,0], 'inputslip', folder)
 
-    strain = np.empty((n_rects, 6))
-    for i in range(n_rects):
-        obs_pts = np.tile(rect_centers[i,np.newaxis,:], (n_tris, 1))
-        all_strains = cutde.fullspace.clu_strain(obs_pts, tri_pts, slip_tris, nu)
-        strain[i, :] = np.sum(all_strains, axis = 0)
-    stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
+    strain, stress = common.eval_tris(rect_centers, tri_pts, slip_tris, sm, nu)
 
     stress_tris = common.dofs_to_tris(stress)
-    # for d in range(6):
-    #     plot_tris((pts, tris), stress_tris[:,d])
     common.plot_tris((pts, tris), stress_tris[:,3], 'rectsxy', folder)
     common.plot_tris((pts, tris), stress_tris[:,5], 'rectsyz', folder)
 

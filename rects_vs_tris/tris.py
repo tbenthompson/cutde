@@ -52,14 +52,7 @@ def main():
     # stress = stress.reshape((n_tris, n_tris, 6))
     # stress_at_centers = np.sum(stress, axis = 1)
 
-    strain = np.empty((n_tris, 6))
-    for i in range(n_tris):
-        obs_pts = np.tile(tri_centers[i,np.newaxis,:], (n_tris, 1))
-        strain[i, :] = np.sum(
-            cutde.fullspace.clu_strain(obs_pts, tri_pts, slip, nu),
-            axis = 0
-        )
-    stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
+    strain, stress = common.eval_tris(tri_centers, tri_pts, slip, sm, nu)
 
     common.plot_tris(m, stress[:,3], 'trisxy', folder)
     common.plot_tris(m, stress[:,5], 'trisyz', folder)

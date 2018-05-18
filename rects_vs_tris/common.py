@@ -2,6 +2,8 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+import cutde.fullspace
+
 def check_folder(f):
     if not os.path.exists(f):
         os.makedirs(f)
@@ -88,3 +90,9 @@ def dofs_to_tris(field, factor = 3):
     out_shape = list(field.shape)
     out_shape[0] *= factor
     return out.reshape(out_shape)
+
+def eval_tris(obs_pts, tri_pts, slip, sm, nu):
+    all_strains = cutde.fullspace.clu_strain_all_pairs(obs_pts, tri_pts, slip, nu)
+    strain = np.sum(all_strains, axis = 1)
+    stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
+    return strain, stress

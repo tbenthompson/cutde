@@ -410,7 +410,7 @@ WITHIN_KERNEL Real6 TDSetupS(Real3 obs, Real alpha, Real3 slip, Real nu,
     // Transform the complete displacement vector components from TDCS into EFCS
     Real3 final = inv_transform3(Vnorm, Vstrike, Vdip, out);
     %for d in range(3):
-        results[i * 3 + ${d}] = final.${comp(d)};
+        results[out_idx * 3 + ${d}] = final.${comp(d)};
     %endfor
 </%def>
 
@@ -447,34 +447,11 @@ WITHIN_KERNEL Real6 TDSetupS(Real3 obs, Real alpha, Real3 slip, Real nu,
     /*);*/
 
     %for d in range(6):
-        results[i * 6 + ${d}] = final.${comp(d)};
+        results[out_idx * 6 + ${d}] = final.${comp(d)};
     %endfor
 </%def>
 
-<%def name="tde(name, evaluator)">
-KERNEL
-void ${name}_fullspace(GLOBAL_MEM Real* results, int n_pairs, 
-    GLOBAL_MEM Real* obs_pts, GLOBAL_MEM Real* tris,
-    GLOBAL_MEM Real* slips, Real nu)
-{
-    int i = get_global_id(0);
-    if (i >= n_pairs) {
-        return;
-    }
-    Real3 obs;
-    % for d1 in range(3):
-        Real3 tri${d1};
-        obs.${comp(d1)} = obs_pts[i * 3 + ${d1}];
-        % for d2 in range(3):
-            tri${d1}.${comp(d2)} = tris[i * 9 + ${d1} * 3 + ${d2}];
-        % endfor
-    % endfor
-
-    Real3 slip = make3(
-        slips[i * 3 + 2],
-        slips[i * 3 + 0],
-        slips[i * 3 + 1]
-    );
+<%def name="setup_tde()">
     Real3 Vnorm = normalize3(cross3(sub3(tri1, tri0), sub3(tri2, tri0)));
     Real3 eY = make3(0.0f, 1.0f, 0.0f);
     Real3 eZ = make3(0.0f,0.0f,1.0f);
@@ -502,11 +479,84 @@ void ${name}_fullspace(GLOBAL_MEM Real* results, int n_pairs,
         transformed_obs,
         transformed_tri0, transformed_tri1, transformed_tri2
     );
+</%def>
+
+<%def name="tde(name, evaluator)">
+KERNEL
+void ${name}_fullspace(GLOBAL_MEM Real* results, int n_pairs, 
+    GLOBAL_MEM Real* obs_pts, GLOBAL_MEM Real* tris,
+    GLOBAL_MEM Real* slips, Real nu)
+{
+    int i = get_global_id(0);
+    int out_idx = i;
+    if (i >= n_pairs) {
+        return;
+    }
+    Real3 obs;
+    % for d1 in range(3):
+        Real3 tri${d1};
+        obs.${comp(d1)} = obs_pts[i * 3 + ${d1}];
+        % for d2 in range(3):
+            tri${d1}.${comp(d2)} = tris[i * 9 + ${d1} * 3 + ${d2}];
+        % endfor
+    % endfor
+
+    Real3 slip = make3(
+        slips[i * 3 + 2],
+        slips[i * 3 + 0],
+        slips[i * 3 + 1]
+    );
+
+    ${setup_tde()}
 
     ${evaluator()}
 }
 </%def>
 
+<%def name="tde_all_pairs(name, evaluator)">
+KERNEL
+void ${name}_fullspace_all_pairs(GLOBAL_MEM Real* results, 
+    int n_obs, int n_src,
+    GLOBAL_MEM Real* obs_pts, GLOBAL_MEM Real* tris,
+    GLOBAL_MEM Real* slips, Real nu)
+{
+    int i = get_global_id(0);
+    int j = get_global_id(1);
+
+    int out_idx = i * n_src + j;
+
+    //TODO: This would probably be a bit faster with some shared memory stuff.
+    //TODO: Also, cache some results about each triangle.
+    if (i >= n_obs) {
+        return;
+    }
+
+    if (j >= n_src) {
+        return;
+    }
+
+    Real3 obs;
+    % for d1 in range(3):
+        Real3 tri${d1};
+        obs.${comp(d1)} = obs_pts[i * 3 + ${d1}];
+        % for d2 in range(3):
+            tri${d1}.${comp(d2)} = tris[j * 9 + ${d1} * 3 + ${d2}];
+        % endfor
+    % endfor
+
+    Real3 slip = make3(
+        slips[j * 3 + 2],
+        slips[j * 3 + 0],
+        slips[j * 3 + 1]
+    );
+
+    ${setup_tde()}
+
+    ${evaluator()}
+}
+</%def>
 
 ${tde("disp", disp)}
 ${tde("strain", strain)}
+${tde_all_pairs("disp", disp)}
+${tde_all_pairs("strain", strain)}

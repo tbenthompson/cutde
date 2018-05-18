@@ -79,3 +79,22 @@ def cluda_tde_tester(setup_fnc):
 
 def test_cluda_simple():
     cluda_tde_tester(get_simple_test)
+
+def test_all_pairs():
+    n_obs = 10
+    n_src = 10
+    pts = np.random.rand(n_obs,3)
+    tris = np.random.rand(n_src,3,3)
+    slips = np.random.rand(n_src,3)
+
+    for i in range(3):
+        start = time.time()
+        strain1 = np.empty((n_obs, n_src, 6))
+        for i in range(n_obs):
+            tiled_pt = np.tile(pts[i,np.newaxis,:], (tris.shape[0],1))
+            strain1[i] = cutde.fullspace.clu_strain(tiled_pt, tris, slips, 0.25)
+        # print(time.time() - start)
+        start = time.time()
+        strain2 = cutde.fullspace.clu_strain_all_pairs(pts, tris, slips, 0.25)
+        # print(time.time() - start)
+    np.testing.assert_almost_equal(strain1, strain2)
