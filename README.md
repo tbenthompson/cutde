@@ -11,22 +11,47 @@ disp = cutde.fullspace.clu_disp(pts, tris, slips, 0.25)
 strain = cutde.fullspace.clu_strain(pts, tris, slips, nu)
 ```
 
-where `pts` is a `np.array` with shape `(N, 3)`, tris is a `np.array` with shape `(N, 3, 3)`, 
-slips is a `np.array` with shape `(N, 3)` and the last parameter is the Poisson ratio. 
+* `pts` is a `np.array` with shape `(N, 3)`
+* tris is a `np.array` with shape `(N, 3, 3)`, 
+* slips is a `np.array` with shape `(N, 3)` 
+* the last parameter, nu, is the Poisson ratio. 
 
 IMPORTANT: N should be the same for all these arrays. There is exactly one triangle and slip value used for each observation point. 
 
 `slip[:,0]` is the strike slip component, while component 1 is the dip slip and component 2 is the tensile/opening component.
 
-The output `disp` is a `(N, 3)` array with displacement components in the x, y, z directions. The output `strain` is a `(N, 6)` array representing a symmetric tensor. `strain[:,0]` is the xx component of strain, 1 is yy, 2 is zz, 3 is xy, 4 is xz, and 5 is  yz.
+* The output `disp` is a `(N, 3)` array with displacement components in the x, y, z directions.
+* The output `strain` is a `(N, 6)` array representing a symmetric tensor. `strain[:,0]` is the xx component of strain, 1 is yy, 2 is zz, 3 is xy, 4 is xz, and 5 is  yz.
 
-There is also a function:
+
+### I want stress.
+Use:
 
 ```
 stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
 ```
 
-that converts from stress to strain assuming isotropic linear elasticity. `sm` is the shear modulus and `nu` is the Poisson ratio.
+to convert from stress to strain assuming isotropic linear elasticity. `sm` is the shear modulus and `nu` is the Poisson ratio.
+
+### All pairs
+
+If, instead, you want to create a matrix representing the interaction between every observation point and every source triangle, there is a different interface:
+
+```
+import cutde.fullspace
+
+disp = cutde.fullspace.clu_disp_all_pairs(pts, tris, slips, 0.25)
+strain = cutde.fullspace.clu_strain_all_pairs(pts, tris, slips, nu)
+```
+
+* `pts` is a `np.array` with shape `(N_OBS_PTS, 3)`
+* tris is a `np.array` with shape `(N_SRC_TRIS, 3, 3)`, 
+* slips is a `np.array` with shape `(N_SRC_TRIS, 3)` 
+* the last parameter, nu, is the Poisson ratio. 
+* The output `disp` is a `(N_OBS_PTS, N_SRC_TRIS, 3)` array.
+* The output `strain` is a `(N_OBS_PTS, N_SRC_TRIS, 6)` array.
+
+Note that to use the `strain_to_stress` function, you'll need to reshape the output strain to be `(N_OBS_PTS * N_SRC_TRIS, 6)`.
 
 ### Installation
 
