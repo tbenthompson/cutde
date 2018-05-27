@@ -11,3 +11,4 @@ tests/result_simple.mat
 archive
 dist
 *.tar.gz
+*.npy

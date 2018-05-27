@@ -8,6 +8,30 @@ def check_folder(f):
     if not os.path.exists(f):
         os.makedirs(f)
 
+def two_rects_mesh(n, corners1, corners2):
+    face1_pts, face1_rects = make_rect_of_rects(n, n, corners1)
+    face2_pts, face2_rects = make_rect_of_rects(n, n, corners2)
+    pts = np.vstack((face1_pts, face2_pts))
+    offset_face2_rects = face2_rects + face1_pts.shape[0]
+    rects = np.vstack((face1_rects, offset_face2_rects))
+    return pts, rects
+
+def twist_mesh(n):
+    corners1 = [[-2, 0, 1], [-2, 0, -1], [-1, 0, -1], [0, 0, 1]]
+    corners2 = [[0, 0, 1], [-1, 0, -1], [2, 2, -1], [2, 2, 1]]
+    return two_rects_mesh(n, corners1, corners2)
+
+def bend_mesh(n):
+    corners1 = [[-2, 0, 1], [-2, 0, -1], [0, 0, -1], [0, 0, 1]]
+    corners2 = [[0, 0, 1], [0, 0, -1], [2, 2, -1], [2, 2, 1]]
+    out = two_rects_mesh(n, corners1, corners2)
+    return out
+
+def planar_mesh(n):
+    # corners = [[-1, -1, 0], [-1, 1, 0], [1, 1, 0], [1, -1, 0]]
+    corners = [[-1, 0, 1], [-1, 0, -1], [1, 0, -1], [1, 0, 1]]
+    return make_rect_of_rects(n, n, corners)
+
 def gaussian(a, b, c, x):
     # return np.ones_like(x)
     return a * np.exp(-((x - b) ** 2) / (2 * c ** 2))
