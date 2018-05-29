@@ -76,18 +76,6 @@ def build_ops(pts, tris):
     ops['M'] = MassOp(tectosaur_cfg['quad_mass_order'], pts, tris)
     return ops
 
-# def build_system(pts, tris, ops, slip):
-#     n_dofs = tris.shape[0] * 9
-#     cs = []
-#     # cs.extend(traction_continuity_constraints(pts, tris, np.array([])))
-#     # cs.extend(continuity_constraints(tris, np.array([])))
-#     # cs.extend(free_edge_constraints(tris))
-#     cm, c_rhs = build_constraint_matrix(cs, n_dofs)
-#
-#     rhs = ops['T'].dot(slip)
-#     rhs += ops['M'].dot(slip)
-#     return cm, c_rhs, ops['U'], rhs
-
 def jump_constraints(jump, negative):
     n_dofs_per_side = jump.shape[0]
     cs = []
@@ -126,9 +114,7 @@ def gdbem(ops):
         [N(U), N(U), S([T,M]), N(T)],
         [0,0,0,0],
         [0,0,0,0],
-        # [N(U), N(U), T, S([N(T),M])],
         [N(A), S([N(A),M]), N(H), H],
-        # [N(A), S([N(A),M]), N(H), H],
     ]
     return mat
 
