@@ -6,6 +6,7 @@ try:
     import pypandoc
     description = pypandoc.convert('README.md', 'rst')
 except (IOError, ImportError):
+    print('pypandoc failed')
     description = open('README.md').read()
 
 setup(
