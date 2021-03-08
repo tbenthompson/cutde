@@ -1,5 +1,7 @@
 # cutde
 
+CUDA-enabled triangle dislocation elements -- 130 million TDEs per second, fullspace only at the moment.
+
 ### Python + CUDA TDEs from Nikkhoo and Walter 2015
 
 Howdy! Usage is really simple:
