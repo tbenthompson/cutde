@@ -1,0 +1,8 @@
+name: cppimport
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - pytest
+  - scipy
+  - pycuda
