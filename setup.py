@@ -2,13 +2,7 @@ from setuptools import setup
 
 version = open("VERSION").read()
 
-try:
-    import pypandoc
-
-    description = pypandoc.convert("README.md", "rst")
-except (IOError, ImportError):
-    print("pypandoc failed")
-    description = open("README.md").read()
+description = open("README.md").read()
 
 setup(
     packages=["cutde"],
@@ -17,8 +11,9 @@ setup(
     include_package_data=True,
     name="cutde",
     version=version,
-    description="",
+    description="130 million TDEs per second, Python + CUDA TDEs from Nikkhoo and Walter 2015",  # noqa:E501
     long_description=description,
+    long_description_content_type="text/markdown",
     url="https://github.com/tbenthompson/cutde",
     author="T. Ben Thompson",
     author_email="t.ben.thompson@gmail.com",
