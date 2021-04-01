@@ -18,10 +18,10 @@ See below for usage and installation instructions.
 Howdy! Usage is really simple:
 
 ```
-import cutde.fullspace
+import cutde
 
-disp = cutde.fullspace.clu_disp(pts, tris, slips, 0.25)
-strain = cutde.fullspace.clu_strain(pts, tris, slips, nu)
+disp = cutde.disp(pts, tris, slips, 0.25)
+strain = cutde.strain(pts, tris, slips, nu)
 ```
 
 * `pts` is a `np.array` with shape `(N, 3)`
@@ -39,7 +39,7 @@ IMPORTANT: N should be the same for all these arrays. There is exactly one trian
 Use:
 
 ```
-stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
+stress = cutde.strain_to_stress(strain, sm, nu)
 ```
 
 to convert from stress to strain assuming isotropic linear elasticity. `sm` is the shear modulus and `nu` is the Poisson ratio.
@@ -49,10 +49,10 @@ to convert from stress to strain assuming isotropic linear elasticity. `sm` is t
 If, instead, you want to create a matrix representing the interaction between every observation point and every source triangle, there is a different interface:
 
 ```
-import cutde.fullspace
+import cutde
 
-disp = cutde.fullspace.clu_disp_all_pairs(pts, tris, slips, 0.25)
-strain = cutde.fullspace.clu_strain_all_pairs(pts, tris, slips, nu)
+disp = cutde.disp_all_pairs(pts, tris, slips, 0.25)
+strain = cutde.strain_all_pairs(pts, tris, slips, nu)
 ```
 
 * `pts` is a `np.array` with shape `(N_OBS_PTS, 3)`

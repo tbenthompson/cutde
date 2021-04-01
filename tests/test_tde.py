@@ -3,7 +3,7 @@ import time
 import numpy as np
 import scipy.io
 
-import cutde.fullspace
+import cutde
 
 
 def get_pt_grid():
@@ -40,7 +40,7 @@ def py_tde_tester(setup_fnc, N_test=-1):
     start = time.time()
     for i in range(N_test):
         pt = test_pts[i, :]
-        results[i, :] = cutde.fullspace.py_disp(pt, tri, slip, 0.25)
+        results[i, :] = cutde.py_disp(pt, tri, slip, 0.25)
         np.testing.assert_almost_equal(results[i, 0], correct["UEf"][i, 0])
         np.testing.assert_almost_equal(results[i, 1], correct["UNf"][i, 0])
         np.testing.assert_almost_equal(results[i, 2], correct["UVf"][i, 0])
@@ -70,15 +70,21 @@ def cluda_tde_tester(setup_fnc):
     tris = np.array([tri] * N_test)
     slips = np.array([slip] * N_test)
 
-    disp = cutde.fullspace.clu_disp(test_pts[:N_test], tris, slips, 0.25, np.float64)
-    strain = cutde.fullspace.clu_strain(test_pts[:N_test], tris, slips, nu, np.float64)
-    stress = cutde.fullspace.strain_to_stress(strain, sm, nu)
+    disp = cutde.disp(test_pts[:N_test], tris, slips, 0.25, np.float64)
+    strain = cutde.strain(test_pts[:N_test], tris, slips, nu, np.float64)
+    stress = cutde.strain_to_stress(strain, sm, nu)
 
     np.testing.assert_almost_equal(disp[:, 0], correct["UEf"][:N_test, 0])
     np.testing.assert_almost_equal(disp[:, 1], correct["UNf"][:N_test, 0])
     np.testing.assert_almost_equal(disp[:, 2], correct["UVf"][:N_test, 0])
     np.testing.assert_almost_equal(strain, correct["Strain"][:N_test])
     np.testing.assert_almost_equal(stress, correct["Stress"][:N_test])
+
+    test_ptsF = np.asfortranarray(test_pts[:N_test])
+    trisF = np.asfortranarray(tris)
+    slipsF = np.asfortranarray(slips)
+    dispF = cutde.disp(test_ptsF, trisF, slipsF, 0.25, np.float64)
+    np.testing.assert_almost_equal(disp, dispF)
 
 
 def test_cluda_simple():
@@ -96,6 +102,13 @@ def test_all_pairs():
         strain1 = np.empty((n_obs, n_src, 6))
         for i in range(n_obs):
             tiled_pt = np.tile(pts[i, np.newaxis, :], (tris.shape[0], 1))
-            strain1[i] = cutde.fullspace.clu_strain(tiled_pt, tris, slips, 0.25)
-        strain2 = cutde.fullspace.clu_strain_all_pairs(pts, tris, slips, 0.25)
-    np.testing.assert_almost_equal(strain1, strain2)
+            strain1[i] = cutde.strain(tiled_pt, tris, slips, 0.25)
+        strain2 = cutde.strain_all_pairs(pts, tris, slips, 0.25)
+        strain3 = cutde.strain_all_pairs(
+            np.asfortranarray(pts),
+            np.asfortranarray(tris),
+            np.asfortranarray(slips),
+            0.25,
+        )
+        np.testing.assert_almost_equal(strain1, strain2)
+        np.testing.assert_almost_equal(strain2, strain3)

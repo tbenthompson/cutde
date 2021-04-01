@@ -1,9 +1,12 @@
+import os
+
 import numpy as np
 
 import cutde.gpu as cluda
 
-from . import source_dir
 from .TDdispFS import TDdispFS
+
+source_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 def py_disp(obs_pt, tri, slip, nu):
@@ -24,6 +27,13 @@ def call_clu(obs_pts, tris, slips, nu, fnc_name, out_dim, float_type):
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
     module = cluda.load_gpu("fullspace.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
+    if obs_pts.flags.f_contiguous:
+        obs_pts = obs_pts.copy()
+    if tris.flags.f_contiguous:
+        tris = tris.copy()
+    if slips.flags.f_contiguous:
+        slips = slips.copy()
+
     gpu_results = cluda.empty_gpu(n * out_dim, float_type)
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
     gpu_tris = cluda.to_gpu(tris, float_type)
@@ -43,24 +53,31 @@ def call_clu(obs_pts, tris, slips, nu, fnc_name, out_dim, float_type):
     return out
 
 
-def call_clu_all_pairs(obs_pts, src_tris, slips, nu, fnc_name, out_dim, float_type):
+def call_clu_all_pairs(obs_pts, tris, slips, nu, fnc_name, out_dim, float_type):
     assert obs_pts.shape[1] == 3
-    assert src_tris.shape[1] == 3
-    assert src_tris.shape[2] == 3
-    assert slips.shape[0] == src_tris.shape[0]
+    assert tris.shape[1] == 3
+    assert tris.shape[2] == 3
+    assert slips.shape[0] == tris.shape[0]
     assert slips.shape[1] == 3
 
     n_obs = obs_pts.shape[0]
-    n_src = src_tris.shape[0]
+    n_src = tris.shape[0]
     block_size = 8
     n_obs_blocks = int(np.ceil(n_obs / block_size))
     n_src_blocks = int(np.ceil(n_src / block_size))
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
     module = cluda.load_gpu("fullspace.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
+    if obs_pts.flags.f_contiguous:
+        obs_pts = obs_pts.copy()
+    if tris.flags.f_contiguous:
+        tris = tris.copy()
+    if slips.flags.f_contiguous:
+        slips = slips.copy()
+
     gpu_results = cluda.empty_gpu(n_obs * n_src * out_dim, float_type)
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
-    gpu_src_tris = cluda.to_gpu(src_tris, float_type)
+    gpu_tris = cluda.to_gpu(tris, float_type)
     gpu_slips = cluda.to_gpu(slips, float_type)
 
     getattr(module, fnc_name + "_all_pairs")(
@@ -68,7 +85,7 @@ def call_clu_all_pairs(obs_pts, src_tris, slips, nu, fnc_name, out_dim, float_ty
         np.int32(n_obs),
         np.int32(n_src),
         gpu_obs_pts,
-        gpu_src_tris,
+        gpu_tris,
         gpu_slips,
         float_type(nu),
         grid=(n_obs_blocks, n_src_blocks, 1),
@@ -78,21 +95,21 @@ def call_clu_all_pairs(obs_pts, src_tris, slips, nu, fnc_name, out_dim, float_ty
     return out
 
 
-def clu_disp(obs_pts, tris, slips, nu, float_dtype=np.float32):
+def disp(obs_pts, tris, slips, nu, float_dtype=np.float32):
     return call_clu(obs_pts, tris, slips, nu, "disp_fullspace", 3, float_dtype)
 
 
-def clu_strain(obs_pts, tris, slips, nu, float_dtype=np.float32):
+def strain(obs_pts, tris, slips, nu, float_dtype=np.float32):
     return call_clu(obs_pts, tris, slips, nu, "strain_fullspace", 6, float_dtype)
 
 
-def clu_disp_all_pairs(obs_pts, tris, slips, nu, float_dtype=np.float32):
+def disp_all_pairs(obs_pts, tris, slips, nu, float_dtype=np.float32):
     return call_clu_all_pairs(
         obs_pts, tris, slips, nu, "disp_fullspace", 3, float_dtype
     )
 
 
-def clu_strain_all_pairs(obs_pts, tris, slips, nu, float_dtype=np.float32):
+def strain_all_pairs(obs_pts, tris, slips, nu, float_dtype=np.float32):
     return call_clu_all_pairs(
         obs_pts, tris, slips, nu, "strain_fullspace", 6, float_dtype
     )

@@ -26,6 +26,10 @@ typedef struct Real6 {
     Real c;
 } Real6;
 
+WITHIN_KERNEL void print(Real x) {
+    printf("%f \n", x);
+}
+
 <%def name="binop(dim, name, op, b_scalar = False)">
 <%
 b_type = 'Real' if b_scalar else 'Real' + str(dim)
@@ -55,6 +59,14 @@ ${binop(dim, 'add_scalar','+',b_scalar = True)}
 ${binop(dim, 'sub_scalar','-',b_scalar = True)}
 ${binop(dim, 'mul_scalar','*',b_scalar = True)}
 ${binop(dim, 'div_scalar','/',b_scalar = True)}
+
+WITHIN_KERNEL void print${dim}(Real${dim} x) {
+    <%
+    format_str = "%f " * dim 
+    var_str = ','.join(['x.' + comp(d) for d in range(dim)])
+    %>
+    printf("${format_str} \n", ${var_str});
+}
 
 WITHIN_KERNEL Real sum${dim}(Real${dim} x) {
     Real out = 0.0;
@@ -158,10 +170,6 @@ WITHIN_KERNEL Real6 tensor_transform3(Real3 a, Real3 b, Real3 c, Real6 tensor) {
         A[1]*A[8])*tensor.b+(A[7]*A[5]+A[8]*A[4])*tensor.c+A[4]*A[5]*tensor.y+
         A[7]*A[8]*tensor.z;
     return out;
-}
-
-WITHIN_KERNEL void print_vec(Real3 x) {
-    printf("%f, %f, %f\n", x.x, x.y, x.z);
 }
 
 WITHIN_KERNEL int trimodefinder(Real3 obs, Real3 tri0, Real3 tri1, Real3 tri2) {
