@@ -6,3 +6,4 @@ dependencies:
   - pytest
   - scipy
   - pycuda
+  - pre-commit

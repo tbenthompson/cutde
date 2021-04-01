@@ -60,10 +60,10 @@ Just run
 pip install cutde
 ```
 
-That'll also install the [`cluda` dependency](https://github.com/tbenthompson/cluda). You might also need to install PyCUDA or PyOpenCL if you don't already have one or the other installed. If you're on a machine that has a GPU that supports CUDA, just try:
+That'll also install the [`cluda` dependency](https://github.com/tbenthompson/cluda). You might also need to install PyCUDA or PyOpenCL if you don't already have one or the other installed. If you're on a machine that has a GPU that supports CUDA, you can install PyCUDA and a conda cudatoolkit package with:
 
 ```
-pip install pycuda
+conda install -c conda-forge pycuda
 ```
 
-If not, you'll need to install PyOpenCL. Installing OpenCL is sometimes a breeze and sometimes a huge pain, but it should be installable on most recent hardware and typical operating systems. [These directions can be helpful.](https://documen.tician.de/pyopencl/misc.html). 
+If not, you'll need to install PyOpenCL. Installing OpenCL is sometimes a breeze and sometimes a huge pain, but it should be installable on most recent hardware and typical operating systems. [These directions can be helpful.](https://documen.tician.de/pyopencl/misc.html#installing-from-conda-forge). I am happy to try to help if you have OpenCL installation issues, but I can't promise to be useful.
