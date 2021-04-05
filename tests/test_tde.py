@@ -1,6 +1,7 @@
 import time
 
 import numpy as np
+import pytest
 import scipy.io
 
 import cutde
@@ -67,11 +68,11 @@ def cluda_tde_tester(setup_fnc):
     nu = 0.25
     sm = 1.0
 
-    tris = np.array([tri] * N_test)
+    tris = np.array([tri] * N_test, dtype=np.float64)
     slips = np.array([slip] * N_test)
 
-    disp = cutde.disp(test_pts[:N_test], tris, slips, 0.25, np.float64)
-    strain = cutde.strain(test_pts[:N_test], tris, slips, nu, np.float64)
+    disp = cutde.disp(test_pts[:N_test], tris, slips, 0.25)
+    strain = cutde.strain(test_pts[:N_test], tris, slips, nu)
     stress = cutde.strain_to_stress(strain, sm, nu)
 
     np.testing.assert_almost_equal(disp[:, 0], correct["UEf"][:N_test, 0])
@@ -83,7 +84,7 @@ def cluda_tde_tester(setup_fnc):
     test_ptsF = np.asfortranarray(test_pts[:N_test])
     trisF = np.asfortranarray(tris)
     slipsF = np.asfortranarray(slips)
-    dispF = cutde.disp(test_ptsF, trisF, slipsF, 0.25, np.float64)
+    dispF = cutde.disp(test_ptsF, trisF, slipsF, 0.25)
     np.testing.assert_almost_equal(disp, dispF)
 
 
@@ -91,12 +92,19 @@ def test_cluda_simple():
     cluda_tde_tester(get_simple_test)
 
 
-def test_all_pairs():
+@pytest.mark.parametrize("float_type", [np.float32, np.float64])
+@pytest.mark.parametrize("F_ordered", [True, False])
+def test_all_pairs(float_type, F_ordered):
     n_obs = 10
     n_src = 10
-    pts = np.random.rand(n_obs, 3)
-    tris = np.random.rand(n_src, 3, 3)
-    slips = np.random.rand(n_src, 3)
+
+    def random_vals(*shape):
+        out = np.random.rand(*shape).astype(float_type)
+        return np.asfortranarray(out) if F_ordered else out
+
+    pts = random_vals(n_obs, 3)
+    tris = random_vals(n_src, 3, 3)
+    slips = random_vals(n_src, 3)
 
     for i in range(3):
         strain1 = np.empty((n_obs, n_src, 6))
@@ -104,11 +112,4 @@ def test_all_pairs():
             tiled_pt = np.tile(pts[i, np.newaxis, :], (tris.shape[0], 1))
             strain1[i] = cutde.strain(tiled_pt, tris, slips, 0.25)
         strain2 = cutde.strain_all_pairs(pts, tris, slips, 0.25)
-        strain3 = cutde.strain_all_pairs(
-            np.asfortranarray(pts),
-            np.asfortranarray(tris),
-            np.asfortranarray(slips),
-            0.25,
-        )
         np.testing.assert_almost_equal(strain1, strain2)
-        np.testing.assert_almost_equal(strain2, strain3)
