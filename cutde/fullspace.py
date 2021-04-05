@@ -36,11 +36,27 @@ def solve_types(obs_pts, tris, slips):
         if float_type is None:
             float_type = type_map[dtype]
 
+            # If we're using OpenCL, we need to check if float64 is allowed.
+            # If not, convert to float32.
+            if cluda.ocl_backend:
+                import cutde.opencl
+
+                cutde.opencl.ensure_initialized()
+                extensions = (
+                    cutde.opencl.gpu_ctx.devices[0].extensions.strip().split(" ")
+                )
+                if "cl_khr_fp64" not in extensions and float_type is np.float64:
+                    warnings.warn(
+                        "The OpenCL implementation being used does not support "
+                        "float64. This will require converting arrays to float32."
+                    )
+                    float_type = np.float32
+
         if dtype != float_type:
             warnings.warn(
                 f"The {name} input array has type {arr.dtype} but needs to be converted"
-                f" to dtype {float_type}. Converting {name} to {float_type}. This may"
-                " be expensive."
+                f" to dtype {np.dtype(float_type)}. Converting {name} to "
+                f"{np.dtype(float_type)} may be expensive."
             )
             out_arrs.append(arr.astype(float_type))
         elif arr.flags.f_contiguous:

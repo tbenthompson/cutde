@@ -121,3 +121,5 @@ The library is extremely simple:
 * `cutde.gpu` - a layer that abstracts between CUDA and OpenCL
 * `cutde.cuda` - the PyCUDA interface.
 * `cutde.opencl` - the PyOpenCL interface.
+
+The `tests/tde_profile.py` script is useful for assessing performance.

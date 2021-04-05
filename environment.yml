@@ -7,3 +7,5 @@ dependencies:
   - scipy
   - pycuda
   - pre-commit
+  - pip
+  - ipdb
