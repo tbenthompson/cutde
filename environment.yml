@@ -4,6 +4,8 @@ channels:
 dependencies:
   - numpy
   - scipy
+  - matplotlib
+  - jinja2
   - black
   - flake8
   - isort
