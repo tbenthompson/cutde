@@ -175,7 +175,12 @@ The Apple OpenCL implementation for Intel CPUs has very poor support for the Ope
 For developing `cutde`, clone the repo and set up your conda environment based on the `environment.yml` with:
 
 ```
+git clone https://github.com/tbenthompson/cutde.git
+cd cutde
 conda env create
+conda activate cutde
+pre-commit install
+pip install --no-use-pep517 --disable-pip-version-check -e .
 ```
 
 Next, install either `pycuda` or `pyopencl` as instructed in the Installation section above.
