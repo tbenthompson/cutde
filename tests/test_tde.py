@@ -92,14 +92,14 @@ def test_cluda_simple():
     cluda_tde_tester(get_simple_test)
 
 
-@pytest.mark.parametrize("float_type", [np.float32, np.float64])
+@pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 @pytest.mark.parametrize("F_ordered", [True, False])
-def test_all_pairs(float_type, F_ordered):
+def test_all_pairs(dtype, F_ordered):
     n_obs = 10
     n_src = 10
 
     def random_vals(*shape):
-        out = np.random.rand(*shape).astype(float_type)
+        out = np.random.rand(*shape).astype(dtype)
         return np.asfortranarray(out) if F_ordered else out
 
     pts = random_vals(n_obs, 3)

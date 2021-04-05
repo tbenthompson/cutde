@@ -15,26 +15,32 @@ def py_disp(obs_pt, tri, slip, nu):
 
 
 def solve_types(obs_pts, tris, slips):
-    floats = [np.float32, np.float64]
+    type_map = {
+        np.int32: np.float32,
+        np.int64: np.float64,
+        np.float32: np.float32,
+        np.float64: np.float64,
+    }
+
     float_type = None
     out_arrs = []
     for name, arr in [("obs_pts", obs_pts), ("tris", tris), ("slips", slips)]:
+        dtype = arr.dtype.type
 
-        if float_type is None:
-            float_type = arr.dtype
-
-        if arr.dtype not in floats:
-            __import__("ipdb").set_trace()
+        if dtype not in type_map:
             raise ValueError(
-                f"The {name} input array has type {arr.dtype} but must have"
-                " a dtype of either np.float32 or np.float64"
+                f"The {name} input array has type {arr.dtype} but must have a float or"
+                " integer dtype."
             )
 
-        if arr.dtype != float_type:
+        if float_type is None:
+            float_type = type_map[dtype]
+
+        if dtype != float_type:
             warnings.warn(
-                f"The {name} input array has type {arr.dtype} but obs_pts"
-                " has dtype {float_type}. Converting {name} to {float_type}."
-                " This may be expensive."
+                f"The {name} input array has type {arr.dtype} but needs to be converted"
+                f" to dtype {float_type}. Converting {name} to {float_type}. This may"
+                " be expensive."
             )
             out_arrs.append(arr.astype(float_type))
         elif arr.flags.f_contiguous:
@@ -46,7 +52,7 @@ def solve_types(obs_pts, tris, slips):
         else:
             out_arrs.append(arr)
 
-    return float_type.type, out_arrs
+    return float_type, out_arrs
 
 
 def check_inputs(obs_pts, tris, slips):
