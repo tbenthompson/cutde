@@ -9,7 +9,7 @@
 
 # Python + CUDA TDEs from Nikkhoo and Walter 2015
 
-CUDA and OpenCL-enabled fullspace triangle dislocation elements. Benchmarked at 130 million TDEs per second.
+CUDA and OpenCL-enabled fullspace triangle dislocation elements. Benchmarked at 130 million TDEs per second. Based on the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software).
 
 See below for usage and installation instructions.
 
@@ -82,3 +82,36 @@ If not, you'll need to install PyOpenCL. Installing OpenCL is sometimes a breeze
 conda install -c conda-forge pyopencl ocl-icd-system
 ```
 and everything worked wonderfully.
+
+### Development
+
+For developing `cutde`, clone the repo and set up your conda environment based on the `environment.yml` with:
+
+```
+conda env create
+```
+
+Next, install either `pycuda` or `pyopencl` as instructed in the Installation section above.
+
+Then, you need to generate the baseline test data derived from [the MATLAB code from Mehdi Nikhoo](https://volcanodeformation.com/software). To do this, first install `octave`. On Ubuntu, this is just:
+
+```
+sudo apt-get install octave
+```
+
+And run 
+
+```
+./tests/setup_test_env
+```
+
+which will run the `tests/matlab/gen_test_data.m` script.
+
+Finally, to check that `cutde` is working properly, run `pytest`!
+
+The library is extremely simple:
+* `cutde.fullspace` - the main entrypoint.
+* `fullspace.cu` - a direct translation of the original MATLAB into CUDA/OpenCL. This probably should not be modified.
+* `cutde.gpu` - a layer that abstracts between CUDA and OpenCL
+* `cutde.cuda` - the PyCUDA interface.
+* `cutde.opencl` - the PyOpenCL interface.

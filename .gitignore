@@ -8,6 +8,8 @@ __pycache__
 *.egg-info
 tests/result_complex.mat
 tests/result_simple.mat
+tests/result_complex.mat2
+tests/result_simple.mat2
 archive
 dist
 *.tar.gz
