@@ -3,9 +3,12 @@ channels:
   - conda-forge
 dependencies:
   - numpy
-  - pytest
   - scipy
-  - pycuda
+  - black
+  - flake8
+  - isort
+  - pytest
+  - pytest-cov
   - pre-commit
-  - pip
   - ipdb
+  - pip
