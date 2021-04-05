@@ -1,4 +1,4 @@
-n = 101;
+n = 11;
 x = linspace(-3, 3, n);
 y = linspace(-3, 3, n);
 z = linspace(-3, 3, n);

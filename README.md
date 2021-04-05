@@ -66,22 +66,39 @@ Note that to use the `strain_to_stress` function, you'll need to reshape the out
 
 ### Installation
 
-Just run 
+To install `cutde` itself run:
 ```
 pip install cutde
 ```
 
-Then, if you have an NVIDIA GPU, install PyCUDA with:
+Next, make sure you are using `conda-forge` with:
+```
+conda config --prepend channels conda-forge
+```
 
+Then, install either PyCUDA or PyOpenCL following the directions below.
+
+**CUDA** If you have an NVIDIA GPU, install PyCUDA with:
 ```
 conda install -c conda-forge pycuda
 ```
 
-If not, you'll need to install PyOpenCL. Installing OpenCL is sometimes a breeze and sometimes a huge pain, but it should be installable on most recent hardware and typical operating systems. [These directions can be helpful.](https://documen.tician.de/pyopencl/misc.html#installing-from-conda-forge). I am happy to try to help if you have OpenCL installation issues, but I can't promise to be useful. For me, on an Ubuntu + Intel machine, I just ran:
+**PyOpenCL on Mac OS X** Install PyOpenCL and the PoCL OpenCL driver with:
 ```
-conda install -c conda-forge pyopencl ocl-icd-system
+conda install pocl pyopencl
 ```
-and everything worked wonderfully.
+
+**PyOpenCL on Ubuntu with PoCL** Just like on a Mac:
+```
+conda install pocl pyopencl
+```
+
+**PyOpenCL on Ubuntu with system drivers** 
+```
+conda install -c conda-forge pyopencl ocl-icd ocl-icd-system
+```
+
+**Something else** You'll need to install PyOpenCL. It should be installable on most recent hardware and typical operating systems. [These directions can be helpful.](https://documen.tician.de/pyopencl/misc.html#installing-from-conda-forge). I am happy to try to help if you have OpenCL installation issues, but I can't promise to be useful.
 
 ### Why can't I use Apple CPU OpenCL?
 
@@ -99,7 +116,7 @@ conda env create
 
 Next, install either `pycuda` or `pyopencl` as instructed in the Installation section above.
 
-Then, you need to generate the baseline test data derived from [the MATLAB code from Mehdi Nikhoo](https://volcanodeformation.com/software). To do this, first install `octave`. On Ubuntu, this is just:
+Then, you should re-generate the baseline test data derived from [the MATLAB code from Mehdi Nikhoo](https://volcanodeformation.com/software). To do this, first install `octave`. On Ubuntu, this is just:
 
 ```
 sudo apt-get install octave

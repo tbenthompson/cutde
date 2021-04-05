@@ -8,7 +8,7 @@ import cutde
 
 
 def get_pt_grid():
-    n = 101
+    n = 11
     x = np.linspace(-3, 3, n)
     y = np.linspace(-3, 3, n)
     z = np.linspace(-3, 3, n)
