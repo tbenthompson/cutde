@@ -3,6 +3,7 @@
     <a target="_blank" href="https://pypi.org/project/cutde/" title="PyPI version"><img src="https://img.shields.io/pypi/v/cutde?logo=pypi"></a>
     <!-- <a target="_blank" href="https://pypi.org/project/cutde/" title="PyPI"><img src="https://img.shields.io/pypi/dm/cutde"></a> -->
     <a target="_blank" href="LICENSE" title="License: MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
+    <a target="_blank" href="https://github.com/tbenthompson/cutde/actions" title="Test Status"><img src="https://github.com/tbenthompson/cutde/actions/workflows/test.yml/badge.svg"></a>
 </a>
 
 # Python + CUDA TDEs from Nikkhoo and Walter 2015
@@ -26,7 +27,7 @@ See below for usage and installation instructions.
       * [Why can't I use Apple CPU OpenCL?](#why-cant-i-use-apple-cpu-opencl)
    * [Development](#development)
 
-<!-- Added by: tbent, at: Mon 05 Apr 2021 05:10:57 PM EDT -->
+<!-- Added by: tbent, at: Mon 05 Apr 2021 05:15:11 PM EDT -->
 
 <!--te-->
 
