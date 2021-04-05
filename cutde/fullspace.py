@@ -116,9 +116,9 @@ def call_clu_all_pairs(obs_pts, tris, slips, nu, fnc_name, out_dim):
 
     n_obs = obs_pts.shape[0]
     n_src = tris.shape[0]
-    block_size = 256
+    block_size = 16
     n_obs_blocks = int(np.ceil(n_obs / block_size))
-    n_src_blocks = int(np.ceil(n_src / 1))
+    n_src_blocks = int(np.ceil(n_src / block_size))
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
     module = cluda.load_gpu("fullspace.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
@@ -136,7 +136,7 @@ def call_clu_all_pairs(obs_pts, tris, slips, nu, fnc_name, out_dim):
         gpu_slips,
         float_type(nu),
         grid=(n_obs_blocks, n_src_blocks, 1),
-        block=(block_size, 1, 1),
+        block=(block_size, block_size, 1),
     )
     out = gpu_results.get().reshape((n_obs, n_src, out_dim))
     return out

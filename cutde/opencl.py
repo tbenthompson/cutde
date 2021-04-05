@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import pyopencl
 import pyopencl.array
@@ -26,10 +27,60 @@ def initialize_with_ctx(ctx):
     report_devices(ctx)
 
 
+def avoid_apple_cpu(ctx):
+    """
+    The Apple CPU OpenCL implementation is awful. Instead, we should just use
+    PoCL.
+    """
+    if ctx.devices[0].platform.name == "Apple" and "CPU" in ctx.devices[0].name:
+        platforms = pyopencl.get_platforms()
+        platform_idx = None
+        for i, p in enumerate(platforms):
+            if p.name != "Apple":
+                platform_idx = i
+            else:
+                apple_platform_idx = i
+        if platform_idx is not None:
+            warnings.warn(
+                "The OpenCL context created used the Apple CPU"
+                " implementation which is not supported. Trying again"
+                f" with a different platform: {p.name}"
+            )
+            return pyopencl.create_some_context(answers=[str(platform_idx)])
+
+        # If no other platforms were found, let's try to
+        # find a non-CPU device like an Iris Pro.
+        platform_idx = apple_platform_idx
+        device_idx = None
+        for i, d in enumerate(platforms[platform_idx].get_devices()):
+            if "CPU" in d.name:
+                continue
+            device_idx = i
+            break
+
+        if device_idx is not None:
+            warnings.warn(
+                "The OpenCL context created used the Apple CPU"
+                " implementation which is not supported. Trying again"
+                f" with a different device: {d.name}"
+            )
+            return pyopencl.create_some_context(
+                answers=[str(platform_idx), str(device_idx)]
+            )
+
+        raise NotImplementedError(
+            "cutde does not support the Apple CPU OpenCL implementation and no other"
+            " platform or device was found. Please consult the cutde README"
+        )
+    return ctx
+
+
 def ensure_initialized():
     global gpu_initialized
     if not gpu_initialized:
-        initialize_with_ctx(pyopencl.create_some_context())
+        ctx = pyopencl.create_some_context()
+        ctx = avoid_apple_cpu(ctx)
+        initialize_with_ctx(ctx)
 
 
 def ptr(arr):
