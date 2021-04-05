@@ -95,10 +95,15 @@ conda install pocl pyopencl
 
 **PyOpenCL on Ubuntu with system drivers** 
 ```
-conda install -c conda-forge pyopencl ocl-icd ocl-icd-system
+conda install pyopencl ocl-icd ocl-icd-system
 ```
 
-**Something else** You'll need to install PyOpenCL. It should be installable on most recent hardware and typical operating systems. [These directions can be helpful.](https://documen.tician.de/pyopencl/misc.html#installing-from-conda-forge). I am happy to try to help if you have OpenCL installation issues, but I can't promise to be useful.
+**Windows** I'm not aware of anyone testing cutde on Windows yet. It should not be difficult to install. I would expect that you install pyopencl via conda and then install the OpenCL libraries and drivers that are provided by your hardware vendor. See the "Something else" section below.
+```
+conda install pyopencl 
+```
+
+**Something else**  I'd suggest starting by trying the instructions for the system most similar to yours above. If that doesn't work, never fear! OpenCL should be installable on almost all recent hardware and typical operating systems. [These directions can be helpful.](https://documen.tician.de/pyopencl/misc.html#installing-from-conda-forge). I am happy to try to help if you have OpenCL installation issues, but I can't promise to be useful.
 
 ### Why can't I use Apple CPU OpenCL?
 
