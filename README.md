@@ -83,6 +83,12 @@ conda install -c conda-forge pyopencl ocl-icd-system
 ```
 and everything worked wonderfully.
 
+### Why can't I use Apple CPU OpenCL?
+
+You might have gotten the message: `cutde does not support the Apple CPU OpenCL implementation and no other platform or device was found. Please consult the cutde README.`
+
+The Apple OpenCL implementation for Intel CPUs has very poor support for the OpenCL standard and causes lots of difficult-to-resolve errors. Instead, please use [the PoCL implementation](http://portablecl.org/). You can install it with `conda install -c conda-forge pocl`.
+
 ### Development
 
 For developing `cutde`, clone the repo and set up your conda environment based on the `environment.yml` with:
