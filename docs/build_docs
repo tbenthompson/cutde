@@ -1,3 +1,4 @@
 #!/bin/bash
 python docs/example.py
 python docs/tmpl_readme.py
+gh-md-toc --insert --no-backup README.md
