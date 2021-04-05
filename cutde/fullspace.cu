@@ -5,6 +5,7 @@ def comp(d):
 ${cluda_preamble}
 
 #define Real ${float_type}
+#define M_PI   3.14159265358979323846264338327950288
 
 typedef struct Real2 {
     Real x;
