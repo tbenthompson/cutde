@@ -1,4 +1,4 @@
-name: cppimport
+name: cutde
 channels:
   - conda-forge
 dependencies:
