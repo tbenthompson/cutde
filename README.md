@@ -98,6 +98,13 @@ conda install pocl pyopencl
 conda install pyopencl ocl-icd ocl-icd-system
 ```
 
+**MacOS** Summarizing the information above the install for MacOS and with no NVIDIA option:
+```
+conda config --add channels conda-forge
+conda install -c conda-forge pocl
+conda install pyopencl 
+```
+
 **Windows** I'm not aware of anyone testing cutde on Windows yet. It should not be difficult to install. I would expect that you install pyopencl via conda and then install the OpenCL libraries and drivers that are provided by your hardware vendor. See the "Something else" section below.
 ```
 conda install pyopencl 
