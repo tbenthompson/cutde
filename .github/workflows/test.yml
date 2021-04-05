@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
+        os: ["windows-latest", "ubuntu-latest", "macos-latest"]
         python-version: ["3.6", "3.7", "3.8", "3.9"]
     name: Test (${{ matrix.python-version }}, ${{ matrix.os }})
     runs-on:  ${{ matrix.os }}
@@ -23,17 +23,9 @@ jobs:
         activate-environment: cutde
         environment-file: environment.yml
         python-version: ${{ matrix.python-version }}
-    - name: Install OpenCL Mac
-      if: ${{ matrix.os == 'macos-latest' }}
+    - name: Install OpenCL
       run: |
         conda install -y pyopencl pocl
-    - name: Install OpenCL Linux
-      if: ${{ matrix.os != 'macos-latest' }}
-      run: |
-        # From https://github.com/inducer/pyopencl/blob/main/.github/workflows/ci.yml
-        curl -L -O https://raw.githubusercontent.com/illinois-scicomp/machine-shop-maintenance/main/install-intel-icd.sh
-        sudo bash ./install-intel-icd.sh
-        conda install -y pyopencl ocl-icd ocl-icd-system
     - name: Install cutde
       run: |
         pip install --no-use-pep517 --no-deps --disable-pip-version-check -e .
