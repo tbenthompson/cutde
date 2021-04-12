@@ -14,3 +14,4 @@ dependencies:
   - pre-commit
   - ipdb
   - pip
+  - sphinx==3.5.4

@@ -6,3 +6,8 @@ from .fullspace import (  # noqa: F401
     strain_all_pairs,
     strain_to_stress,
 )
+from .geometry import (  # noqa: F401
+    compute_efcs_to_tdcs_rotations,
+    compute_normal_vectors,
+    compute_projection_rotations,
+)
