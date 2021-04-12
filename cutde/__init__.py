@@ -9,5 +9,5 @@ from .fullspace import (  # noqa: F401
 from .geometry import (  # noqa: F401
     compute_efcs_to_tdcs_rotations,
     compute_normal_vectors,
-    compute_projection_rotations,
+    compute_projection_transforms,
 )

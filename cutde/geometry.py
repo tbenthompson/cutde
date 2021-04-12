@@ -58,7 +58,7 @@ def compute_projection_transforms(
 
     out = np.empty((origins.shape[0], 3, 3), dtype=origins.dtype)
     for d in range(3):
-        eps = 0.1
+        eps = 1.0
         targets = origins.copy()
         targets[:, d] += eps
         proj_origins = np.array(
