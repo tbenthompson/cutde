@@ -5,7 +5,7 @@ dependencies:
   - numpy
   - scipy
   - matplotlib
-  - jinja2
+  - pyproj
   - black
   - flake8
   - isort
