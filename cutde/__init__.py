@@ -1,9 +1,11 @@
 from .fullspace import (  # noqa: F401
     disp,
-    disp_all_pairs,
+    disp_free,
+    disp_matrix,
     py_disp,
     strain,
-    strain_all_pairs,
+    strain_free,
+    strain_matrix,
     strain_to_stress,
 )
 from .geometry import (  # noqa: F401

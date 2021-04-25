@@ -1,3 +1,5 @@
+import logging
+import sys
 import time
 
 import numpy as np
@@ -5,6 +7,22 @@ import pytest
 import scipy.io
 
 import cutde
+
+
+def enable_logging():
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
+
+
+enable_logging()
 
 
 def get_pt_grid():
@@ -92,24 +110,69 @@ def test_cluda_simple():
     cluda_tde_tester(get_simple_test)
 
 
-@pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
-@pytest.mark.parametrize("F_ordered", [True, False])
-def test_all_pairs(dtype, F_ordered):
-    n_obs = 10
-    n_src = 10
+def setup_matrix_test(dtype, F_ordered):
+    np.random.seed(10)
 
-    def random_vals(*shape):
-        out = np.random.rand(*shape).astype(dtype)
+    n_obs = 100
+    n_src = 100
+
+    def random_vals(shape, max_val):
+        out = (np.random.rand(*shape) * max_val).astype(dtype)
         return np.asfortranarray(out) if F_ordered else out
 
-    pts = random_vals(n_obs, 3)
-    tris = random_vals(n_src, 3, 3)
-    slips = random_vals(n_src, 3)
+    pts = random_vals((n_obs, 3), max_val=100)
+    tris = random_vals((n_src, 3, 3), max_val=100)
+    slips = random_vals((n_src, 3), max_val=1)
 
-    for i in range(3):
-        strain1 = np.empty((n_obs, n_src, 6))
-        for i in range(n_obs):
-            tiled_pt = np.tile(pts[i, np.newaxis, :], (tris.shape[0], 1))
-            strain1[i] = cutde.strain(tiled_pt, tris, slips, 0.25)
-        strain2 = cutde.strain_all_pairs(pts, tris, slips, 0.25)
-        np.testing.assert_almost_equal(strain1, strain2)
+    return pts, tris, slips
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
+@pytest.mark.parametrize("F_ordered", [True, False])
+@pytest.mark.parametrize("field", ["disp", "strain"])
+def test_matrix(dtype, F_ordered, field):
+    pts, tris, slips = setup_matrix_test(dtype, F_ordered)
+
+    if field == "disp":
+        simple_fnc = cutde.disp
+        matrix_fnc = cutde.disp_matrix
+    else:
+        simple_fnc = cutde.strain
+        matrix_fnc = cutde.strain_matrix
+
+    strain_mat1 = []
+    for i in range(pts.shape[0]):
+        tiled_pt = np.tile(pts[i, np.newaxis, :], (tris.shape[0], 1))
+        strain_mat1.append(simple_fnc(tiled_pt, tris, slips, 0.25))
+    strain_mat1 = np.array(strain_mat1)
+
+    strain_mat2 = matrix_fnc(pts, tris, 0.25)
+    M = strain_mat2.reshape((-1, slips.size))
+
+    S1 = np.sum(strain_mat1, axis=1).flatten()
+    S2 = M.dot(slips.flatten())
+    acc = 4 if dtype is np.float32 else 7
+    np.testing.assert_almost_equal(S1, S2, acc)
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
+@pytest.mark.parametrize("F_ordered", [True, False])
+@pytest.mark.parametrize("field", ["disp", "strain"])
+def test_matrix_free(dtype, F_ordered, field):
+    pts, tris, slips = setup_matrix_test(dtype, F_ordered)
+
+    if field == "disp":
+        matrix_fnc = cutde.disp_matrix
+        free_fnc = cutde.disp_free
+    else:
+        matrix_fnc = cutde.strain_matrix
+        free_fnc = cutde.strain_free
+
+    strain_mat = matrix_fnc(pts, tris, 0.25)
+    M = strain_mat.reshape((-1, slips.size))
+    S1 = M.dot(slips.flatten())
+
+    S2 = free_fnc(pts, tris, slips, 0.25).flatten()
+
+    acc = 4 if dtype is np.float32 else 7
+    np.testing.assert_almost_equal(S1, S2, acc)

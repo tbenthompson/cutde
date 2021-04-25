@@ -14,6 +14,13 @@ def py_disp(obs_pt, tri, slip, nu):
     return TDdispFS(obs_pt, tri, slip, nu)
 
 
+class Placeholder:
+    pass
+
+
+placeholder = Placeholder()
+
+
 def solve_types(obs_pts, tris, slips):
     type_map = {
         np.int32: np.float32,
@@ -25,6 +32,10 @@ def solve_types(obs_pts, tris, slips):
     float_type = None
     out_arrs = []
     for name, arr in [("obs_pts", obs_pts), ("tris", tris), ("slips", slips)]:
+        if arr is placeholder:
+            out_arrs.append(arr)
+            continue
+
         dtype = arr.dtype.type
 
         if dtype not in type_map:
@@ -87,12 +98,12 @@ def check_inputs(obs_pts, tris, slips):
             "The third dimension of the tris array must be 3 because the triangle "
             "vertices should be locations in three-dimensional space."
         )
-    if slips.shape[0] != tris.shape[0]:
+    if slips is not placeholder and (slips.shape[0] != tris.shape[0]):
         raise ValueError(
             "The number of input slip vectors must be equal to the number of input"
             " triangles."
         )
-    if slips.shape[1] != 3:
+    if slips is not placeholder and (slips.shape[1] != 3):
         raise ValueError(
             "The second dimension of the slips array must be 3 because each row "
             "should be a vector in the TDE coordinate system (strike-slip, dip-slip,"
@@ -132,9 +143,9 @@ def call_clu(obs_pts, tris, slips, nu, fnc_name, out_dim):
     return out
 
 
-def call_clu_all_pairs(obs_pts, tris, slips, nu, fnc_name, out_dim):
-    check_inputs(obs_pts, tris, slips)
-    float_type, (obs_pts, tris, slips) = solve_types(obs_pts, tris, slips)
+def call_clu_matrix(obs_pts, tris, nu, fnc_name, out_dim):
+    check_inputs(obs_pts, tris, placeholder)
+    float_type, (obs_pts, tris, _) = solve_types(obs_pts, tris, placeholder)
 
     n_obs = obs_pts.shape[0]
     n_src = tris.shape[0]
@@ -144,12 +155,41 @@ def call_clu_all_pairs(obs_pts, tris, slips, nu, fnc_name, out_dim):
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
     module = cluda.load_gpu("fullspace.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = cluda.empty_gpu(n_obs * n_src * out_dim, float_type)
+    gpu_results = cluda.empty_gpu(n_obs * out_dim * n_src * 3, float_type)
+    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
+    gpu_tris = cluda.to_gpu(tris, float_type)
+
+    getattr(module, fnc_name + "_matrix")(
+        gpu_results,
+        np.int32(n_obs),
+        np.int32(n_src),
+        gpu_obs_pts,
+        gpu_tris,
+        float_type(nu),
+        grid=(n_obs_blocks, n_src_blocks, 1),
+        block=(block_size, block_size, 1),
+    )
+    out = gpu_results.get().reshape((n_obs, out_dim, n_src, 3))
+    return out
+
+
+def call_clu_free(obs_pts, tris, slips, nu, fnc_name, out_dim):
+    check_inputs(obs_pts, tris, slips)
+    float_type, (obs_pts, tris, slips) = solve_types(obs_pts, tris, slips)
+
+    n_obs = obs_pts.shape[0]
+    n_src = tris.shape[0]
+    block_size = 256
+    n_obs_blocks = int(np.ceil(n_obs / block_size))
+    gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
+    module = cluda.load_gpu("fullspace.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+
+    gpu_results = cluda.zeros_gpu(n_obs * out_dim, float_type)
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
     gpu_tris = cluda.to_gpu(tris, float_type)
     gpu_slips = cluda.to_gpu(slips, float_type)
 
-    getattr(module, fnc_name + "_all_pairs")(
+    getattr(module, fnc_name + "_free")(
         gpu_results,
         np.int32(n_obs),
         np.int32(n_src),
@@ -157,10 +197,10 @@ def call_clu_all_pairs(obs_pts, tris, slips, nu, fnc_name, out_dim):
         gpu_tris,
         gpu_slips,
         float_type(nu),
-        grid=(n_obs_blocks, n_src_blocks, 1),
-        block=(block_size, block_size, 1),
+        grid=(n_obs_blocks, 1, 1),
+        block=(block_size, 1, 1),
     )
-    out = gpu_results.get().reshape((n_obs, n_src, out_dim))
+    out = gpu_results.get().reshape((n_obs, out_dim))
     return out
 
 
@@ -172,12 +212,20 @@ def strain(obs_pts, tris, slips, nu):
     return call_clu(obs_pts, tris, slips, nu, "strain_fullspace", 6)
 
 
-def disp_all_pairs(obs_pts, tris, slips, nu):
-    return call_clu_all_pairs(obs_pts, tris, slips, nu, "disp_fullspace", 3)
+def disp_matrix(obs_pts, tris, nu):
+    return call_clu_matrix(obs_pts, tris, nu, "disp_fullspace", 3)
 
 
-def strain_all_pairs(obs_pts, tris, slips, nu):
-    return call_clu_all_pairs(obs_pts, tris, slips, nu, "strain_fullspace", 6)
+def strain_matrix(obs_pts, tris, nu):
+    return call_clu_matrix(obs_pts, tris, nu, "strain_fullspace", 6)
+
+
+def disp_free(obs_pts, tris, slips, nu):
+    return call_clu_free(obs_pts, tris, slips, nu, "disp_fullspace", 3)
+
+
+def strain_free(obs_pts, tris, slips, nu):
+    return call_clu_free(obs_pts, tris, slips, nu, "strain_fullspace", 6)
 
 
 def strain_to_stress(strain, mu, nu):

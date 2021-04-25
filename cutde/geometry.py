@@ -1,5 +1,6 @@
 import numpy as np
-import pyproj
+
+# import pyproj
 
 
 def compute_normal_vectors(tri_pts) -> np.ndarray:
@@ -26,9 +27,7 @@ def compute_normal_vectors(tri_pts) -> np.ndarray:
     return Vnormal
 
 
-def compute_projection_transforms(
-    origins, transformer: pyproj.Transformer
-) -> np.ndarray:
+def compute_projection_transforms(origins, transformer) -> np.ndarray:
     """
     Convert vectors from one coordinate system to another. Unlike positions,
     this cannot be done with a simple pyproj call. We first need to set up a
