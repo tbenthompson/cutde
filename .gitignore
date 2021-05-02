@@ -9,3 +9,4 @@ archive
 dist
 *.tar.gz
 *.npy
+*.rendered

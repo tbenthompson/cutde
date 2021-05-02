@@ -63,21 +63,24 @@ def solve_types(obs_pts, tris, slips):
                     )
                     float_type = np.float32
 
+        out_arr = arr
         if dtype != float_type:
             warnings.warn(
-                f"The {name} input array has type {arr.dtype} but needs to be converted"
+                f"The {name} input array has type {out_arr.dtype} but needs "
+                "to be converted"
                 f" to dtype {np.dtype(float_type)}. Converting {name} to "
                 f"{np.dtype(float_type)} may be expensive."
             )
-            out_arrs.append(arr.astype(float_type))
-        elif arr.flags.f_contiguous:
+            out_arr = out_arr.astype(float_type)
+
+        if out_arr.flags.f_contiguous:
             warnings.warn(
                 f"The {name} input array has Fortran ordering. "
                 "Converting to C ordering. This may be expensive."
             )
-            out_arrs.append(np.ascontiguousarray(arr))
-        else:
-            out_arrs.append(arr)
+            out_arr = np.ascontiguousarray(out_arr)
+
+        out_arrs.append(out_arr)
 
     return float_type, out_arrs
 

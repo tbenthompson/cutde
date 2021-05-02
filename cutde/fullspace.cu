@@ -576,6 +576,7 @@ void ${name}_fullspace_free(GLOBAL_MEM Real* results,
 
     %for d_obs in range(vec_dim):
         Real sum${d_obs} = 0.0;
+        Real kahanc${d_obs} = 0.0;
     %endfor
 
     Real3 obs;
@@ -601,6 +602,8 @@ void ${name}_fullspace_free(GLOBAL_MEM Real* results,
             % endfor
         }
 
+        LOCAL_BARRIER;
+
         if (i < n_obs) {
             int block_end = min(n_src, block_start + ${block_size});
             int block_length = block_end - block_start;
@@ -616,7 +619,13 @@ void ${name}_fullspace_free(GLOBAL_MEM Real* results,
                 ${evaluator()}
 
                 %for d_obs in range(vec_dim):
-                    sum${d_obs} += final.${comp(d_obs)};
+                {
+                    Real input = final.${comp(d_obs)};
+                    Real y = input - kahanc${d_obs};
+                    Real t = sum${d_obs} + y;
+                    kahanc${d_obs} = (t - sum${d_obs}) - y;
+                    sum${d_obs} = t;
+                }
                 %endfor
             }
         }
@@ -624,7 +633,7 @@ void ${name}_fullspace_free(GLOBAL_MEM Real* results,
 
     if (i < n_obs) {
         %for d_obs in range(vec_dim):
-            results[i * ${vec_dim} + ${d_obs}] += sum${d_obs};
+            results[i * ${vec_dim} + ${d_obs}] = sum${d_obs};
         %endfor
     }
 }

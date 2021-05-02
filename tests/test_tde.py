@@ -11,10 +11,12 @@ import cutde
 
 def enable_logging():
     root = logging.getLogger()
-    root.setLevel(logging.DEBUG)
+    level = logging.INFO
+    # level = logging.DEBUG
+    root.setLevel(level)
 
     handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(logging.DEBUG)
+    handler.setLevel(level)
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
@@ -122,7 +124,7 @@ def setup_matrix_test(dtype, F_ordered):
 
     pts = random_vals((n_obs, 3), max_val=100)
     tris = random_vals((n_src, 3, 3), max_val=100)
-    slips = random_vals((n_src, 3), max_val=1)
+    slips = random_vals((n_src, 3), max_val=100)
 
     return pts, tris, slips
 
@@ -141,18 +143,19 @@ def test_matrix(dtype, F_ordered, field):
         matrix_fnc = cutde.strain_matrix
 
     strain_mat1 = []
+    slips[:] = 1
     for i in range(pts.shape[0]):
         tiled_pt = np.tile(pts[i, np.newaxis, :], (tris.shape[0], 1))
         strain_mat1.append(simple_fnc(tiled_pt, tris, slips, 0.25))
     strain_mat1 = np.array(strain_mat1)
+    S1 = np.sum(strain_mat1, axis=1).flatten()
 
     strain_mat2 = matrix_fnc(pts, tris, 0.25)
-    M = strain_mat2.reshape((-1, slips.size))
+    M = strain_mat2.reshape((-1, 3, slips.size))
+    S2 = M.dot(slips.flatten()).flatten()
 
-    S1 = np.sum(strain_mat1, axis=1).flatten()
-    S2 = M.dot(slips.flatten())
-    acc = 4 if dtype is np.float32 else 7
-    np.testing.assert_almost_equal(S1, S2, acc)
+    rtol = 2e-4 if pts.dtype.type in [np.float32, np.int32] else 4e-10
+    np.testing.assert_allclose(S1, S2, rtol=rtol)
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
@@ -172,7 +175,15 @@ def test_matrix_free(dtype, F_ordered, field):
     M = strain_mat.reshape((-1, slips.size))
     S1 = M.dot(slips.flatten())
 
-    S2 = free_fnc(pts, tris, slips, 0.25).flatten()
+    S2 = np.zeros_like(S1)
+    for d in range(3):
+        slips_chunk = np.zeros_like(slips)
+        slips_chunk[:, d] = slips[:, d]
+        S2 += free_fnc(pts, tris, slips_chunk, 0.25).flatten()
+    # S2 = free_fnc(pts, tris, slips, 0.25).flatten()
 
-    acc = 4 if dtype is np.float32 else 7
-    np.testing.assert_almost_equal(S1, S2, acc)
+    if pts.dtype.type in [np.float32, np.int32]:
+        rtol, atol = 2e-3, 3e-3
+    else:
+        rtol, atol = 4e-10, 1e-15
+    np.testing.assert_allclose(S1, S2, rtol=rtol, atol=atol)

@@ -112,7 +112,7 @@ def template_with_mako(tmpl, tmpl_args):
 
 
 def load_gpu(
-    tmpl_name, tmpl_dir=None, save_code=True, no_caching=False, tmpl_args=None
+    tmpl_name, tmpl_dir=None, save_code=False, no_caching=False, tmpl_args=None
 ):
     if tmpl_args is None:
         tmpl_args = dict()
