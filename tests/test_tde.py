@@ -113,13 +113,13 @@ def test_cluda_simple():
 
 
 def setup_matrix_test(dtype, F_ordered):
-    np.random.seed(10)
+    rand = np.random.RandomState(10)
 
     n_obs = 100
     n_src = 100
 
     def random_vals(shape, max_val):
-        out = (np.random.rand(*shape) * max_val).astype(dtype)
+        out = (rand.rand(*shape) * max_val).astype(dtype)
         return np.asfortranarray(out) if F_ordered else out
 
     pts = random_vals((n_obs, 3), max_val=100)
@@ -142,20 +142,21 @@ def test_matrix(dtype, F_ordered, field):
         simple_fnc = cutde.strain
         matrix_fnc = cutde.strain_matrix
 
-    strain_mat1 = []
+    mat1 = []
     slips[:] = 1
     for i in range(pts.shape[0]):
         tiled_pt = np.tile(pts[i, np.newaxis, :], (tris.shape[0], 1))
-        strain_mat1.append(simple_fnc(tiled_pt, tris, slips, 0.25))
-    strain_mat1 = np.array(strain_mat1)
-    S1 = np.sum(strain_mat1, axis=1).flatten()
+        mat1.append(simple_fnc(tiled_pt, tris, slips, 0.25))
+    S1 = np.sum(np.array(mat1), axis=1).flatten()
 
-    strain_mat2 = matrix_fnc(pts, tris, 0.25)
-    M = strain_mat2.reshape((-1, 3, slips.size))
-    S2 = M.dot(slips.flatten()).flatten()
+    S2 = matrix_fnc(pts, tris, 0.25).reshape((-1, slips.size)).dot(slips.flatten())
 
-    rtol = 2e-4 if pts.dtype.type in [np.float32, np.int32] else 4e-10
-    np.testing.assert_allclose(S1, S2, rtol=rtol)
+    assert np.isfinite(S2).all()
+    if pts.dtype.type in [np.float32, np.int32]:
+        rtol, atol = 1e-4, 1e-5
+    else:
+        rtol, atol = 4e-12, 1e-15
+    np.testing.assert_allclose(S1, S2, rtol=rtol, atol=atol)
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
@@ -171,19 +172,12 @@ def test_matrix_free(dtype, F_ordered, field):
         matrix_fnc = cutde.strain_matrix
         free_fnc = cutde.strain_free
 
-    strain_mat = matrix_fnc(pts, tris, 0.25)
-    M = strain_mat.reshape((-1, slips.size))
-    S1 = M.dot(slips.flatten())
+    S1 = matrix_fnc(pts, tris, 0.25).reshape((-1, slips.size)).dot(slips.flatten())
+    S2 = free_fnc(pts, tris, slips, 0.25).flatten()
 
-    S2 = np.zeros_like(S1)
-    for d in range(3):
-        slips_chunk = np.zeros_like(slips)
-        slips_chunk[:, d] = slips[:, d]
-        S2 += free_fnc(pts, tris, slips_chunk, 0.25).flatten()
-    # S2 = free_fnc(pts, tris, slips, 0.25).flatten()
-
+    assert np.isfinite(S2).all()
     if pts.dtype.type in [np.float32, np.int32]:
-        rtol, atol = 2e-3, 3e-3
+        rtol, atol = 1e-4, 1e-5
     else:
-        rtol, atol = 4e-10, 1e-15
+        rtol, atol = 4e-12, 1e-15
     np.testing.assert_allclose(S1, S2, rtol=rtol, atol=atol)
