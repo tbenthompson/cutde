@@ -1,6 +1,31 @@
 import numpy as np
 
-# import pyproj
+
+def strain_to_stress(strain, mu, nu):
+    """
+    Compute stress given strain like:
+        stress = 2 * mu * strain + lambda * Id(3) * trace(strain)
+
+    Parameters
+    ----------
+    strain : {array-like}, shape (n_tensors, 6)
+        The strain tensors ordered like (e_xx, e_yy, e_zz, e_xy, e_xz, e_yz)
+    mu : float
+        Shear modulus
+    nu : float
+        Poisson ratio
+
+    Returns
+    -------
+    stress : np.ndarray, shape (n_tensors, 6)
+        The stress tensors ordered like (s_xx, s_yy, s_zz, s_xy, s_xz, s_yz)
+    """
+    lam = 2 * mu * nu / (1 - 2 * nu)
+    trace = np.sum(strain[:, :3], axis=1)
+    stress = np.empty_like(strain)
+    stress[:, :3] = 2 * mu * strain[:, :3] + lam * trace[:, np.newaxis]
+    stress[:, 3:] = 2 * mu * strain[:, 3:]
+    return stress
 
 
 def compute_normal_vectors(tri_pts) -> np.ndarray:

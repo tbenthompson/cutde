@@ -73,17 +73,29 @@ def py_tde_tester(setup_fnc, N_test=-1):
     np.testing.assert_almost_equal(results[:, 2], correct["UVf"][:N_test, 0])
 
 
+def test_py_simple_reduced():
+    py_tde_tester(get_simple_test, N_test=10)
+
+
+@pytest.mark.slow
 def test_py_simple():
     py_tde_tester(get_simple_test, N_test=1000)
 
 
+def test_py_complex_reduced():
+    py_tde_tester(get_complex_test, N_test=10)
+
+
+@pytest.mark.slow
 def test_py_complex():
     py_tde_tester(get_complex_test, N_test=1000)
 
 
-def cluda_tde_tester(setup_fnc):
+def cluda_tde_tester(setup_fnc, N_test=None):
     correct, test_pts, tri, slip = setup_fnc()
-    N_test = correct["UEf"].shape[0]
+
+    if N_test is None:
+        N_test = correct["UEf"].shape[0]
 
     nu = 0.25
     sm = 1.0
@@ -108,6 +120,11 @@ def cluda_tde_tester(setup_fnc):
     np.testing.assert_almost_equal(disp, dispF)
 
 
+def test_cluda_simple_reduced():
+    cluda_tde_tester(get_simple_test, N_test=10)
+
+
+@pytest.mark.slow
 def test_cluda_simple():
     cluda_tde_tester(get_simple_test)
 
@@ -115,8 +132,8 @@ def test_cluda_simple():
 def setup_matrix_test(dtype, F_ordered):
     rand = np.random.RandomState(10)
 
-    n_obs = 100
-    n_src = 100
+    n_obs = 10
+    n_src = 10
 
     def random_vals(shape, max_val):
         out = (rand.rand(*shape) * max_val).astype(dtype)
@@ -155,7 +172,7 @@ def test_matrix(dtype, F_ordered, field):
     if pts.dtype.type in [np.float32, np.int32]:
         rtol, atol = 1e-4, 1e-5
     else:
-        rtol, atol = 4e-12, 1e-15
+        rtol, atol = 4e-10, 1e-15
     np.testing.assert_allclose(S1, S2, rtol=rtol, atol=atol)
 
 
@@ -179,5 +196,55 @@ def test_matrix_free(dtype, F_ordered, field):
     if pts.dtype.type in [np.float32, np.int32]:
         rtol, atol = 1e-4, 1e-5
     else:
-        rtol, atol = 4e-12, 1e-15
+        rtol, atol = 4e-10, 1e-15
     np.testing.assert_allclose(S1, S2, rtol=rtol, atol=atol)
+
+
+@pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
+@pytest.mark.parametrize("F_ordered", [True, False])
+@pytest.mark.parametrize("field", ["disp", "strain"])
+def test_block(dtype, F_ordered, field):
+    pts, tris, slips = setup_matrix_test(dtype, F_ordered)
+
+    if field == "disp":
+        matrix_fnc = cutde.disp_matrix
+        block_fnc = cutde.disp_block
+    else:
+        matrix_fnc = cutde.strain_matrix
+        block_fnc = cutde.strain_block
+
+    M1 = matrix_fnc(pts, tris, 0.25)
+
+    src_start = []
+    src_end = []
+    obs_start = []
+    obs_end = []
+    # Break apart the full matrix into a bunch of non-overlapping chunks to
+    # test the blocking
+    obs_edges = [0, 4, 5, pts.shape[0]]
+    src_edges = [0, 1, 3, 7, tris.shape[0]]
+    for i in range(len(obs_edges) - 1):
+        for j in range(len(src_edges) - 1):
+            obs_start.append(obs_edges[i])
+            obs_end.append(obs_edges[i + 1])
+            src_start.append(src_edges[j])
+            src_end.append(src_edges[j + 1])
+    block_mat, block_start = block_fnc(
+        pts, tris, obs_start, obs_end, src_start, src_end, 0.25
+    )
+    assert block_start.shape[0] == len(src_start) + 1
+    assert block_mat.size == M1.size
+
+    # Piece the blocks back together.
+    M2 = np.empty_like(M1)
+    for i in range(len(src_start)):
+        os = obs_start[i]
+        oe = obs_end[i]
+        ss = src_start[i]
+        se = src_end[i]
+        M2[os:oe, :, ss:se, :] = block_mat[block_start[i] : block_start[i + 1]].reshape(
+            (oe - os, M1.shape[1], se - ss, 3)
+        )
+
+    tol = 1e-5 if pts.dtype.type in [np.float32, np.int32] else 1e-10
+    np.testing.assert_allclose(M1, M2, rtol=tol, atol=tol)

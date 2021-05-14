@@ -8,6 +8,10 @@ import numpy as np
 cuda_backend = False
 ocl_backend = False
 try:
+    if "CUTDE_USE_OPENCL" in os.environ:
+        # Pop over to using OpenCL even if CUDA is available.
+        raise ImportError
+
     from .cuda import (
         cluda_preamble,
         compile,
