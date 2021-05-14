@@ -194,7 +194,7 @@ def test_matrix_free(dtype, F_ordered, field):
 
     assert np.isfinite(S2).all()
     if pts.dtype.type in [np.float32, np.int32]:
-        rtol, atol = 1e-4, 1e-5
+        rtol, atol = 1e-4, 3e-5
     else:
         rtol, atol = 4e-10, 1e-15
     np.testing.assert_allclose(S1, S2, rtol=rtol, atol=atol)

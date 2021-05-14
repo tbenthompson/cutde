@@ -10,7 +10,7 @@ void blocks_${name}(GLOBAL_MEM Real* results,
     GLOBAL_MEM int* obs_start, GLOBAL_MEM int* obs_end,
     GLOBAL_MEM int* src_start, GLOBAL_MEM int* src_end,
     GLOBAL_MEM int* block_start,
-    Real nu)
+    Real nu, Real tol)
 {
     int block_idx = get_global_id(0);
     int os = obs_start[block_idx];

@@ -234,7 +234,9 @@ def process_block_inputs(obs_start, obs_end, src_start, src_end):
     return out_arrs
 
 
-def call_clu_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, fnc):
+def call_clu_block(
+    obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, fnc_type, fnc
+):
     fnc_name, out_dim = fnc
     check_inputs(obs_pts, tris, placeholder)
     float_type, (obs_pts, tris, _) = solve_types(obs_pts, tris, placeholder)
@@ -252,7 +254,7 @@ def call_clu_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, fn
     team_size = 256
     # n_obs_blocks = int(np.ceil(n_obs / block_size))
     gpu_config = dict(block_size=team_size, float_type=cluda.np_to_c_type(float_type))
-    module = cluda.load_gpu("blocks.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    module = cluda.load_gpu(fnc_type + ".cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
     gpu_results = cluda.zeros_gpu(block_end[-1], float_type)
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
@@ -263,7 +265,7 @@ def call_clu_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, fn
     gpu_src_end = cluda.to_gpu(src_end, np.int32)
     gpu_block_start = cluda.to_gpu(block_start, np.int32)
 
-    getattr(module, "blocks_" + fnc_name)(
+    getattr(module, fnc_type + "_" + fnc_name)(
         gpu_results,
         gpu_obs_pts,
         gpu_tris,
@@ -273,6 +275,7 @@ def call_clu_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, fn
         gpu_src_end,
         gpu_block_start,
         float_type(nu),
+        float_type(tol),
         grid=(n_blocks, 1, 1),
         block=(1, 1, 1),
     )
@@ -309,11 +312,23 @@ def strain_free(obs_pts, tris, slips, nu):
 
 def disp_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu):
     return call_clu_block(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, DISP
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, 0, "blocks", DISP
     )
 
 
 def strain_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu):
     return call_clu_block(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, STRAIN
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, 0, "blocks", STRAIN
+    )
+
+
+def disp_aca(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol):
+    return call_clu_block(
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, "aca", DISP
+    )
+
+
+def strain_aca(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol):
+    return call_clu_block(
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, "aca", STRAIN
     )
