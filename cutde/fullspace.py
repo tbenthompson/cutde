@@ -115,7 +115,7 @@ def check_inputs(obs_pts, tris, slips):
 
 
 def call_clu(obs_pts, tris, slips, nu, fnc):
-    fnc_name, out_dim = fnc
+    fnc_name, vec_dim = fnc
     if tris.shape[0] != obs_pts.shape[0]:
         raise ValueError("There must be one input observation point per triangle.")
 
@@ -128,7 +128,7 @@ def call_clu(obs_pts, tris, slips, nu, fnc):
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
     module = cluda.load_gpu("pairs.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = cluda.empty_gpu(n * out_dim, float_type)
+    gpu_results = cluda.empty_gpu(n * vec_dim, float_type)
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
     gpu_tris = cluda.to_gpu(tris, float_type)
     gpu_slips = cluda.to_gpu(slips, float_type)
@@ -143,12 +143,12 @@ def call_clu(obs_pts, tris, slips, nu, fnc):
         grid=(n_blocks, 1, 1),
         block=(block_size, 1, 1),
     )
-    out = gpu_results.get().reshape((n, out_dim))
+    out = gpu_results.get().reshape((n, vec_dim))
     return out
 
 
 def call_clu_matrix(obs_pts, tris, nu, fnc):
-    fnc_name, out_dim = fnc
+    fnc_name, vec_dim = fnc
     check_inputs(obs_pts, tris, placeholder)
     float_type, (obs_pts, tris, _) = solve_types(obs_pts, tris, placeholder)
 
@@ -160,7 +160,7 @@ def call_clu_matrix(obs_pts, tris, nu, fnc):
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
     module = cluda.load_gpu("matrix.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = cluda.empty_gpu(n_obs * out_dim * n_src * 3, float_type)
+    gpu_results = cluda.empty_gpu(n_obs * vec_dim * n_src * 3, float_type)
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
     gpu_tris = cluda.to_gpu(tris, float_type)
 
@@ -174,12 +174,12 @@ def call_clu_matrix(obs_pts, tris, nu, fnc):
         grid=(n_obs_blocks, n_src_blocks, 1),
         block=(block_size, block_size, 1),
     )
-    out = gpu_results.get().reshape((n_obs, out_dim, n_src, 3))
+    out = gpu_results.get().reshape((n_obs, vec_dim, n_src, 3))
     return out
 
 
 def call_clu_free(obs_pts, tris, slips, nu, fnc):
-    fnc_name, out_dim = fnc
+    fnc_name, vec_dim = fnc
     check_inputs(obs_pts, tris, slips)
     float_type, (obs_pts, tris, slips) = solve_types(obs_pts, tris, slips)
 
@@ -190,7 +190,7 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
     module = cluda.load_gpu("free.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = cluda.zeros_gpu(n_obs * out_dim, float_type)
+    gpu_results = cluda.zeros_gpu(n_obs * vec_dim, float_type)
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
     gpu_tris = cluda.to_gpu(tris, float_type)
     gpu_slips = cluda.to_gpu(slips, float_type)
@@ -206,7 +206,7 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
         grid=(n_obs_blocks, 1, 1),
         block=(block_size, 1, 1),
     )
-    out = gpu_results.get().reshape((n_obs, out_dim))
+    out = gpu_results.get().reshape((n_obs, vec_dim))
     return out
 
 
@@ -234,27 +234,24 @@ def process_block_inputs(obs_start, obs_end, src_start, src_end):
     return out_arrs
 
 
-def call_clu_block(
-    obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, fnc_type, fnc
-):
-    fnc_name, out_dim = fnc
+def call_clu_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, fnc):
+    fnc_name, vec_dim = fnc
     check_inputs(obs_pts, tris, placeholder)
     float_type, (obs_pts, tris, _) = solve_types(obs_pts, tris, placeholder)
     obs_start, obs_end, src_start, src_end = process_block_inputs(
         obs_start, obs_end, src_start, src_end
     )
 
-    block_sizes = out_dim * 3 * (obs_end - obs_start) * (src_end - src_start)
+    block_sizes = vec_dim * 3 * (obs_end - obs_start) * (src_end - src_start)
     block_end = np.cumsum(block_sizes)
     block_start = np.empty(block_end.shape[0] + 1, dtype=block_end.dtype)
     block_start[:-1] = block_end - block_sizes
     block_start[-1] = block_end[-1]
 
     n_blocks = obs_end.shape[0]
-    team_size = 256
-    # n_obs_blocks = int(np.ceil(n_obs / block_size))
-    gpu_config = dict(block_size=team_size, float_type=cluda.np_to_c_type(float_type))
-    module = cluda.load_gpu(fnc_type + ".cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    team_size = 16
+    gpu_config = dict(float_type=cluda.np_to_c_type(float_type))
+    module = cluda.load_gpu("blocks.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
     gpu_results = cluda.zeros_gpu(block_end[-1], float_type)
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
@@ -265,7 +262,7 @@ def call_clu_block(
     gpu_src_end = cluda.to_gpu(src_end, np.int32)
     gpu_block_start = cluda.to_gpu(block_start, np.int32)
 
-    getattr(module, fnc_type + "_" + fnc_name)(
+    getattr(module, "blocks_" + fnc_name)(
         gpu_results,
         gpu_obs_pts,
         gpu_tris,
@@ -275,11 +272,141 @@ def call_clu_block(
         gpu_src_end,
         gpu_block_start,
         float_type(nu),
-        float_type(tol),
         grid=(n_blocks, 1, 1),
-        block=(1, 1, 1),
+        block=(team_size, 1, 1),
     )
     return gpu_results.get(), block_start
+
+
+def call_clu_aca(
+    obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter, fnc
+):
+    fnc_name, vec_dim = fnc
+    check_inputs(obs_pts, tris, placeholder)
+    float_type, (obs_pts, tris, _) = solve_types(obs_pts, tris, placeholder)
+    obs_start, obs_end, src_start, src_end = process_block_inputs(
+        obs_start, obs_end, src_start, src_end
+    )
+
+    # TODO: Get a basic one worker for each block version working.
+    # TODO: Implement a team for each block.
+    default_chunk_size = 16
+    n_blocks = obs_end.shape[0]
+
+    gpu_config = dict(float_type=cluda.np_to_c_type(float_type))
+    module = cluda.load_gpu("aca.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+
+    chunk_start = 0
+    chunk_size = min(n_blocks - chunk_start, default_chunk_size)
+    chunk_end = chunk_start + chunk_size
+
+    n_obs_per_block = obs_end[chunk_start:chunk_end] - obs_start[chunk_start:chunk_end]
+    n_src_per_block = src_end[chunk_start:chunk_end] - src_start[chunk_start:chunk_end]
+    n_rows = n_obs_per_block * vec_dim
+    n_cols = n_src_per_block * 3
+    block_sizes = n_rows * n_cols
+
+    # Storage for the U, V output matrices. These will be in a packed format.
+    gpu_buffer = cluda.empty_gpu(block_sizes.sum(), float_type)
+
+    # Storage for temporary rows and columns.
+    workspace_IJstar = np.max(n_cols) + np.max(n_rows)
+    workspace_IJref = 3 * np.max(n_cols) + vec_dim * np.max(n_rows)
+    workspace_per_block = workspace_IJstar + workspace_IJref
+    fworkspace_size = workspace_per_block * n_blocks
+    gpu_fworkspace = cluda.empty_gpu(fworkspace_size, float_type)
+
+    # results_ptrs is a simple linked lists where each
+    # pair of integers in the arrays is a pair where the elements are:
+    # 1. The index of the start of the term in the output buffer. The U term is
+    #    stored first and then the V term follows.
+    # 2. The index in results_ptrs of the next term for this block.
+    uv_ptrs_size = np.minimum(n_rows, n_cols)
+    uv_ptrs_ends = np.cumsum(uv_ptrs_size)
+    uv_ptrs_starts = uv_ptrs_ends - uv_ptrs_size
+    gpu_uv_ptrs_starts = cluda.to_gpu(uv_ptrs_starts, np.int32)
+    gpu_uv_ptrs = cluda.empty_gpu(uv_ptrs_ends[-1], np.int32)
+    gpu_iworkspace = cluda.empty_gpu(uv_ptrs_ends[-1], np.int32)
+
+    # Output space for specifying the number of terms used for each
+    # approximation.
+    gpu_n_terms = cluda.empty_gpu(chunk_size, np.int32)
+
+    # Storage space for a pointer to the next empty portion of the output
+    # buffer.
+    gpu_next_ptr = cluda.zeros_gpu(1, np.int32)
+
+    # The index of the starting reference rows/cols.
+    # TODO:
+    # TODO:
+    # TODO:
+    # TODO:
+    Iref0 = 0 * (np.random.rand(chunk_size) * n_rows).astype(np.int32)
+    Jref0 = 0 * (np.random.rand(chunk_size) * n_cols).astype(np.int32)
+    gpu_Iref0 = cluda.to_gpu(Iref0, np.int32)
+    gpu_Jref0 = cluda.to_gpu(Jref0, np.int32)
+
+    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
+    gpu_tris = cluda.to_gpu(tris, float_type)
+    gpu_obs_start = cluda.to_gpu(obs_start, np.int32)
+    gpu_obs_end = cluda.to_gpu(obs_end, np.int32)
+    gpu_src_start = cluda.to_gpu(src_start, np.int32)
+    gpu_src_end = cluda.to_gpu(src_end, np.int32)
+
+    print(f"gpu_buffer.shape = {gpu_buffer.shape}")
+    print(f"gpu_uv_ptrs.shape = {gpu_uv_ptrs.shape}")
+    print(f"gpu_n_terms.shape = {gpu_n_terms.shape}")
+    print(f"gpu_next_ptr.shape = {gpu_next_ptr.shape}")
+    print(f"gpu_fworkspace.shape = {gpu_fworkspace.shape}")
+    print(f"gpu_iworkspace.shape = {gpu_iworkspace.shape}")
+    print(f"gpu_uv_ptrs_starts.shape = {gpu_uv_ptrs_starts.shape}")
+    print(f"gpu_Iref0.shape = {gpu_Iref0.shape}")
+    print(f"gpu_Jref0.shape = {gpu_Jref0.shape}")
+    print(f"obs_pts.shape = {obs_pts.shape}")
+    print(f"tris.shape = {tris.shape}")
+    print(f"gpu_obs_start.shape = {gpu_obs_start.shape}")
+    print(f"gpu_obs_end.shape = {gpu_obs_end.shape}")
+    print(f"gpu_src_start.shape = {gpu_src_start.shape}")
+    print(f"gpu_src_end.shape = {gpu_src_end.shape}")
+
+    getattr(module, "aca_" + fnc_name)(
+        gpu_buffer,
+        gpu_uv_ptrs,
+        gpu_n_terms,
+        gpu_next_ptr,
+        gpu_fworkspace,
+        gpu_iworkspace,
+        gpu_uv_ptrs_starts,
+        gpu_Iref0,
+        gpu_Jref0,
+        gpu_obs_pts,
+        gpu_tris,
+        gpu_obs_start,
+        gpu_obs_end,
+        gpu_src_start,
+        gpu_src_end,
+        float_type(nu),
+        float_type(tol),
+        np.int32(max_iter),
+        grid=(chunk_size, 1, 1),
+        block=(1, 1, 1),
+    )
+
+    # TODO: post-process the buffer to collect the U, V vectors
+    buffer = gpu_buffer.get()
+    uv_ptrs = gpu_uv_ptrs.get()
+    n_terms = gpu_n_terms.get()
+    appxs = []
+    for i in range(chunk_size):
+        us = []
+        vs = []
+        uv_ptr0 = uv_ptrs_starts[i]
+        for k in range(n_terms[i]):
+            ptr = uv_ptrs[uv_ptr0 + k]
+            us.append(buffer[ptr : (ptr + n_rows[i])])
+            vs.append(buffer[(ptr + n_rows[i]) : (ptr + n_rows[i] + n_cols[i])])
+        appxs.append((np.array(us), np.array(vs)))
+    return appxs
 
 
 DISP = ("disp", 3)
@@ -312,23 +439,25 @@ def strain_free(obs_pts, tris, slips, nu):
 
 def disp_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu):
     return call_clu_block(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, 0, "blocks", DISP
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, DISP
     )
 
 
 def strain_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu):
     return call_clu_block(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, 0, "blocks", STRAIN
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, STRAIN
     )
 
 
-def disp_aca(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol):
-    return call_clu_block(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, "aca", DISP
+def disp_aca(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter):
+    return call_clu_aca(
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter, DISP
     )
 
 
-def strain_aca(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol):
-    return call_clu_block(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, "aca", STRAIN
+def strain_aca(
+    obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter
+):
+    return call_clu_aca(
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter, STRAIN
     )

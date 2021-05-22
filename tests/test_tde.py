@@ -2,6 +2,7 @@ import logging
 import sys
 import time
 
+import aca
 import numpy as np
 import pytest
 import scipy.io
@@ -129,11 +130,8 @@ def test_cluda_simple():
     cluda_tde_tester(get_simple_test)
 
 
-def setup_matrix_test(dtype, F_ordered):
-    rand = np.random.RandomState(10)
-
-    n_obs = 10
-    n_src = 10
+def setup_matrix_test(dtype, F_ordered, n_obs=10, n_src=10, seed=10):
+    rand = np.random.RandomState(seed)
 
     def random_vals(shape, max_val):
         out = (rand.rand(*shape) * max_val).astype(dtype)
@@ -248,3 +246,45 @@ def test_block(dtype, F_ordered, field):
 
     tol = 1e-5 if pts.dtype.type in [np.float32, np.int32] else 1e-10
     np.testing.assert_allclose(M1, M2, rtol=tol, atol=tol)
+
+
+# @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
+# @pytest.mark.parametrize("F_ordered", [True, False])
+# @pytest.mark.parametrize("field", ["disp", "strain"])
+def test_aca():
+    dtype, F_ordered, field = np.float64, False, "disp"
+    pts, tris, slips = setup_matrix_test(dtype, F_ordered, n_obs=50, n_src=50)
+    pts[:, 0] -= 150
+    # import matplotlib.pyplot as plt
+    # plt.plot(pts[:,0], pts[:,1], 'ro')
+    # plt.plot(tris.reshape((-1,3))[:,0], tris.reshape((-1,3))[:,1], 'bo')
+    # plt.show()
+
+    if field == "disp":
+        matrix_fnc = cutde.disp_matrix
+        aca_fnc = cutde.disp_aca
+    else:
+        matrix_fnc = cutde.strain_matrix
+        aca_fnc = cutde.strain_aca
+
+    M1 = matrix_fnc(pts, tris, 0.25)
+    M1 = M1.reshape((M1.shape[0] * M1.shape[1], M1.shape[2] * M1.shape[3]))
+    print("true frobenius norm", np.sqrt(np.sum(M1 ** 2)))
+
+    def get_row(Istart, Iend):
+        return M1[Istart:Iend, :]
+
+    def get_col(Jstart, Jend):
+        return M1[:, Jstart:Jend]
+
+    U, V = aca.ACA_plus(
+        M1.shape[0], M1.shape[1], get_row, get_col, 1e-3, verbose=True, Iref=0, Jref=0
+    )
+
+    M2 = aca_fnc(pts, tris, [0], [pts.shape[0]], [0], [tris.shape[0]], 0.25, 1e-3, 200)
+    print(M2)
+    np.testing.assert_almost_equal
+
+
+if __name__ == "__main__":
+    test_aca()

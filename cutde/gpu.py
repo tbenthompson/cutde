@@ -10,6 +10,8 @@ ocl_backend = False
 try:
     if "CUTDE_USE_OPENCL" in os.environ:
         # Pop over to using OpenCL even if CUDA is available.
+        # This can be helpful for testing purposes when it might be nice to run
+        # with OpenCL even if CUDA is installed.
         raise ImportError
 
     from .cuda import (
@@ -33,6 +35,8 @@ except ImportError:
     )
 
     ocl_backend = True
+
+cluda_backend = "cuda" if cuda_backend else "opencl"
 
 logger = logging.getLogger(__name__)
 
@@ -106,7 +110,9 @@ def get_template(tmpl_name, tmpl_dir):
 
 def template_with_mako(tmpl, tmpl_args):
     try:
-        return tmpl.render(**tmpl_args, cluda_preamble=cluda_preamble)
+        return tmpl.render(
+            **tmpl_args, cluda_backend=cluda_backend, cluda_preamble=cluda_preamble
+        )
     except:  # noqa: E722
         # bare except is okay because we re-raise immediately
         import mako.exceptions
@@ -132,7 +138,9 @@ def load_gpu(
         tmpl_args = dict()
 
     code = template_with_mako(tmpl, tmpl_args)
-    with open(os.path.join(tmpl_dir, tmpl_name + ".rendered"), "w") as f:
+    rendered_fp = os.path.join(tmpl_dir, tmpl_name + ".rendered")
+    with open(rendered_fp, "w") as f:
+        f.write("\n")
         f.write(code)
 
     logger.debug("start compiling " + tmpl_name)
