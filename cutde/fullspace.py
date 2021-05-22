@@ -312,9 +312,14 @@ def call_clu_aca(
     # Storage for temporary rows and columns.
     workspace_IJstar = np.max(n_cols) + np.max(n_rows)
     workspace_IJref = 3 * np.max(n_cols) + vec_dim * np.max(n_rows)
-    workspace_per_block = workspace_IJstar + workspace_IJref
-    fworkspace_size = workspace_per_block * n_blocks
+    fworkspace_per_block = workspace_IJstar + workspace_IJref
+    fworkspace_size = fworkspace_per_block * n_blocks
     gpu_fworkspace = cluda.empty_gpu(fworkspace_size, float_type)
+    # TODO: use true n_rows/n_cols instead of maxes above.
+    gpu_fworkspace_starts = cluda.to_gpu(
+        fworkspace_size * np.arange(chunk_size), np.int32
+    )
+    __import__("ipdb").set_trace()
 
     # results_ptrs is a simple linked lists where each
     # pair of integers in the arrays is a pair where the elements are:
@@ -377,6 +382,7 @@ def call_clu_aca(
         gpu_fworkspace,
         gpu_iworkspace,
         gpu_uv_ptrs_starts,
+        gpu_fworkspace_starts,
         gpu_Iref0,
         gpu_Jref0,
         gpu_obs_pts,
@@ -405,7 +411,7 @@ def call_clu_aca(
             ptr = uv_ptrs[uv_ptr0 + k]
             us.append(buffer[ptr : (ptr + n_rows[i])])
             vs.append(buffer[(ptr + n_rows[i]) : (ptr + n_rows[i] + n_cols[i])])
-        appxs.append((np.array(us), np.array(vs)))
+        appxs.append((np.array(us).T, np.array(vs)))
     return appxs
 
 

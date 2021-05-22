@@ -5,12 +5,13 @@ ${common.defs()}
 
 WITHIN_KERNEL 
 int buffer_alloc(GLOBAL_MEM int* next_ptr, int n_values) {
-    printf("alloc! %i %i \n", *next_ptr, n_values);
     % if cluda_backend == 'cuda':
-        return atomicAdd(next_ptr, n_values);
+        int out = atomicAdd(next_ptr, n_values);
     % else:
-        return atomic_add(next_ptr, n_values);
+        int out = atomic_add(next_ptr, n_values);
     % endif
+    printf("alloc! %i %i \n", out, n_values);
+    return out;
 }
 
 WITHIN_KERNEL
@@ -214,6 +215,7 @@ void aca_${name}(
     GLOBAL_MEM int* iworkspace,
     // immutable parameters below here
     GLOBAL_MEM int* uv_ptrs_starts,
+    GLOBAL_MEM int* fworkspace_starts,
     GLOBAL_MEM int* Iref0, GLOBAL_MEM int* Jref0,
     GLOBAL_MEM Real* obs_pts, GLOBAL_MEM Real* tris,
     GLOBAL_MEM int* obs_start, GLOBAL_MEM int* obs_end,
@@ -233,16 +235,17 @@ void aca_${name}(
 
     int uv_ptr0 = uv_ptrs_starts[block_idx];
 
-    GLOBAL_MEM int* prevIstar = iworkspace;
-    GLOBAL_MEM int* prevJstar = &iworkspace[min(n_cols, n_rows) / 2];
+    GLOBAL_MEM int* block_iworkspace = &iworkspace[uv_ptr0];
+    GLOBAL_MEM int* prevIstar = block_iworkspace;
+    GLOBAL_MEM int* prevJstar = &block_iworkspace[min(n_cols, n_rows) / 2];
 
+    GLOBAL_MEM Real* block_fworkspace = &fworkspace[fworkspace_starts[block_idx]];
+    GLOBAL_MEM Real* RIstar = block_fworkspace;
+    GLOBAL_MEM Real* RJstar = &block_fworkspace[n_cols];
 
-    GLOBAL_MEM Real* RIstar = fworkspace;
-    GLOBAL_MEM Real* RJstar = &fworkspace[n_cols];
-
-    GLOBAL_MEM Real* RIref = &fworkspace[n_cols + n_rows];
-    printf("fworkspace: %i %i %i %i \n", 0, n_cols, n_cols + n_rows, n_cols + n_rows + 3 * n_cols);
-    GLOBAL_MEM Real* RJref = &fworkspace[n_cols + n_rows + 3 * n_cols];
+    GLOBAL_MEM Real* RIref = &block_fworkspace[n_cols + n_rows];
+    // printf("fworkspace: %i %i %i %i \n", 0, n_cols, n_cols + n_rows, n_cols + n_rows + 3 * n_cols);
+    GLOBAL_MEM Real* RJref = &block_fworkspace[n_cols + n_rows + 3 * n_cols];
 
     int Iref = Iref0[block_idx];
     Iref -= Iref % 3;
@@ -265,7 +268,7 @@ void aca_${name}(
     // TODO:
     // TODO:
     // TODO:
-    // max_iter = 10;
+    // max_iter = 1;
 
 
     Real frob_est = 0;

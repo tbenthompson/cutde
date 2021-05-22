@@ -251,40 +251,86 @@ def test_block(dtype, F_ordered, field):
 # @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 # @pytest.mark.parametrize("F_ordered", [True, False])
 # @pytest.mark.parametrize("field", ["disp", "strain"])
-def test_aca():
+def test_aca(n_sets):
+    """
+    This checks that the OpenCL/CUDA ACA implementation is producing *exactly*
+    the same results as the Python implementation.
+    """
     dtype, F_ordered, field = np.float64, False, "disp"
-    pts, tris, slips = setup_matrix_test(dtype, F_ordered, n_obs=50, n_src=50)
-    pts[:, 0] -= 150
-    # import matplotlib.pyplot as plt
-    # plt.plot(pts[:,0], pts[:,1], 'ro')
-    # plt.plot(tris.reshape((-1,3))[:,0], tris.reshape((-1,3))[:,1], 'bo')
-    # plt.show()
 
     if field == "disp":
         matrix_fnc = cutde.disp_matrix
         aca_fnc = cutde.disp_aca
+        vec_dim = 3
     else:
         matrix_fnc = cutde.strain_matrix
         aca_fnc = cutde.strain_aca
+        vec_dim = 6
+
+    pts = []
+    tris = []
+    # n_sets = 2
+    for i in range(n_sets):
+        this_pts, this_tris, _ = setup_matrix_test(dtype, F_ordered, n_obs=50, n_src=50)
+        this_pts[:, 0] -= 150
+        pts.append(this_pts)
+        tris.append(this_tris)
+    pts = np.concatenate(pts)
+    tris = np.concatenate(tris)
+
+    obs_starts = []
+    obs_ends = []
+    src_starts = []
+    src_ends = []
+    for i in range(n_sets):
+        for j in range(n_sets):
+            obs_starts.append(i * (pts.shape[0] // n_sets))
+            obs_ends.append((i + 1) * (pts.shape[0] // n_sets))
+            src_starts.append(j * (pts.shape[0] // n_sets))
+            src_ends.append((j + 1) * (pts.shape[0] // n_sets))
 
     M1 = matrix_fnc(pts, tris, 0.25)
     M1 = M1.reshape((M1.shape[0] * M1.shape[1], M1.shape[2] * M1.shape[3]))
-    print("true frobenius norm", np.sqrt(np.sum(M1 ** 2)))
 
-    def get_row(Istart, Iend):
-        return M1[Istart:Iend, :]
+    __import__("ipdb").set_trace()
+    M2 = aca_fnc(pts, tris, obs_starts, obs_ends, src_starts, src_ends, 0.25, 1e-4, 200)
 
-    def get_col(Jstart, Jend):
-        return M1[:, Jstart:Jend]
+    for block_idx in range(len(obs_starts)):
+        os = obs_starts[block_idx]
+        oe = obs_ends[block_idx]
+        ss = src_starts[block_idx]
+        se = src_ends[block_idx]
 
-    U, V = aca.ACA_plus(
-        M1.shape[0], M1.shape[1], get_row, get_col, 1e-3, verbose=True, Iref=0, Jref=0
-    )
+        block = M1[(os * vec_dim) : (oe * vec_dim), (3 * ss) : (3 * se)]
 
-    M2 = aca_fnc(pts, tris, [0], [pts.shape[0]], [0], [tris.shape[0]], 0.25, 1e-3, 200)
-    print(M2)
-    np.testing.assert_almost_equal
+        def get_row(Istart, Iend):
+            return block[Istart:Iend, :]
+
+        def get_col(Jstart, Jend):
+            return block[:, Jstart:Jend]
+
+        U, V = aca.ACA_plus(
+            block.shape[0],
+            block.shape[1],
+            get_row,
+            get_col,
+            1e-4,
+            verbose=True,
+            Iref=0,
+            Jref=0,
+        )
+
+        U2, V2 = M2[block_idx]
+        np.testing.assert_almost_equal(U, U2)
+        np.testing.assert_almost_equal(V, V2)
+
+        diff = block - U2.dot(V2)
+        diff_frob = np.sqrt(np.sum(diff ** 2))
+        block_frob = np.sqrt(np.sum(block ** 2))
+        print(diff_frob, block_frob, diff_frob / block_frob)
+        assert diff_frob / block_frob < 1e-3
 
 
 if __name__ == "__main__":
-    test_aca()
+    test_aca(1)
+    # test_aca(2)

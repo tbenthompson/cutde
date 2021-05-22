@@ -1,3 +1,7 @@
+"""
+This Python ACA implementation is included here in order to help test the
+OpenCL/CUDA implementation in cutde.
+"""
 import numpy as np
 
 
@@ -11,6 +15,7 @@ def ACA_plus(
     verbose=False,
     Iref=None,
     Jref=None,
+    vec_dim=3,
 ):
     """
     Run the ACA+ plus algorithm on a matrix implicitly defined by the
@@ -77,14 +82,14 @@ def ACA_plus(
         # When a row gets used in the approximation, we will need to
         # reset to use a different reference row. Just, increment!
         while True:
-            Iref = (Iref + 3) % n_rows
-            Iref -= Iref % 3
+            Iref = (Iref + vec_dim) % n_rows
+            Iref -= Iref % vec_dim
             if Iref not in prevIstar:
                 break
 
         # Grab the "row" (actually three rows corresponding to the
         # x, y, and z components for a single observation point)
-        return calc_residual_rows(Iref, Iref + 3), Iref
+        return calc_residual_rows(Iref, Iref + vec_dim), Iref
 
     # Same function as above but for the reference column
     def reset_reference_col(Jref):
@@ -111,7 +116,7 @@ def ACA_plus(
     # so pre-subtract that.
     if Iref is None:
         Iref = np.random.randint(n_rows)
-    Iref -= 3
+    Iref -= vec_dim
     if Jref is None:
         Jref = np.random.randint(n_cols)
     Jref -= 3
@@ -195,12 +200,12 @@ def ACA_plus(
         # If we pivoted on the reference row, then choose a new reference row.
         # Remember that we are using a x,y,z vector "row" or
         # set of 3 rows in an algebraic sense.
-        if Iref <= Istar < Iref + 3:
+        if Iref <= Istar < Iref + vec_dim:
             RIref, Iref = reset_reference_row(Iref)
         else:
             # If we didn't change the reference row of the residual matrix "R",
             # update the row to account for the new components of the approximation.
-            RIref -= us[-1][Iref : Iref + 3][:, None] * vs[-1][None, :]
+            RIref -= us[-1][Iref : Iref + vec_dim][:, None] * vs[-1][None, :]
 
         # If we pivoted on the reference column, then choose a new reference column.
         # Remember that we are using a x,y,z vector "column" or
