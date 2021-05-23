@@ -172,7 +172,8 @@ def ACA_plus(
         # Add the new rank-1 outer product to the approximation (see step 4 above)
         vs.append(RIstar / RIstar[Jstar])
         us.append(RJstar.copy())
-        print(us[-1][:5], vs[-1][:5])
+        print("us", us[-1][:5])
+        print("vs", vs[-1][:5])
 
         # How "large" was this update to the approximation?
         step_size = np.sqrt(np.sum(us[-1] ** 2) * np.sum(vs[-1] ** 2))

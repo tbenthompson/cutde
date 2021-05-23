@@ -117,10 +117,10 @@ void calc_${matrix_dim}_${name}(
     /*
     * In the calc_rows/cols function, we will calculate a batch of rows or
     * columns corresponding to a particular triangular dislocation element. 
-    * In most cases, this will be three rows corresponding to the x/y/z
-    * components. But in the case of calculating rows for a strain matrix, we
-    * will be calculating six components. See the use of "vec_dim" below to
-    * specify the number of rows. 
+    * In most cases, this will be three rows/cols corresponding to the x/y/z
+    * components of displacement or slip. But in the case of calculating rows
+    * for a strain matrix, we will be calculating six components. See the use
+    * of "vec_dim" below to specify the number of rows. 
     * 
     * But, we specify the element in terms of the rowcol_start and rowcol_end.
     * This allows grabbing just a subset of the rows when that is desirable.
@@ -129,9 +129,10 @@ void calc_${matrix_dim}_${name}(
 
     % if matrix_dim == "rows":
 
-    int i = floor(((float)rowcol_start) / ${vec_dim});
-    int obs_dim_start = rowcol_start - i * ${vec_dim};
-    int obs_dim_end = rowcol_end - i * ${vec_dim};
+    int block_i = floor(((float)rowcol_start) / ${vec_dim});
+    int obs_dim_start = rowcol_start - block_i * ${vec_dim};
+    int obs_dim_end = rowcol_end - block_i * ${vec_dim};
+    int i = os + block_i;
     int obs_idx = 0;
     // printf("rcs, i, s, e: %i, %i, %i, %i \n", rowcol_start, i, obs_dim_start, obs_dim_end);
 
@@ -143,9 +144,10 @@ void calc_${matrix_dim}_${name}(
 
     % else:
 
-    int j = floor(((float)rowcol_start) / 3);
-    int src_dim_start = rowcol_start - j * 3;
-    int src_dim_end = rowcol_end - j * 3;
+    int block_j = floor(((float)rowcol_start) / 3);
+    int src_dim_start = rowcol_start - block_j * 3;
+    int src_dim_end = rowcol_end - block_j * 3;
+    int j = ss + block_j;
     // printf("j, s, e: %i, %i, %i \n", j, src_dim_start, src_dim_end);
     int src_idx = 0;
     int n_output_src = 1;
@@ -244,7 +246,6 @@ void aca_${name}(
     GLOBAL_MEM Real* RJstar = &block_fworkspace[n_cols];
 
     GLOBAL_MEM Real* RIref = &block_fworkspace[n_cols + n_rows];
-    // printf("fworkspace: %i %i %i %i \n", 0, n_cols, n_cols + n_rows, n_cols + n_rows + 3 * n_cols);
     GLOBAL_MEM Real* RJref = &block_fworkspace[n_cols + n_rows + 3 * n_cols];
 
     int Iref = Iref0[block_idx];
@@ -345,7 +346,7 @@ void aca_${name}(
         uv_ptrs[uv_ptr0 + k] = next_buffer_u_ptr;
 
         Real v2 = 0;
-        for (int i = 0; i < n_rows; i++) {
+        for (int i = 0; i < n_cols; i++) {
             next_buffer_v[i] = RIstar[i] / RIstar[Jstar];
             if (i < 5) {
                 printf("v[%i] = %f\n", i, next_buffer_v[i]);
@@ -354,7 +355,7 @@ void aca_${name}(
         }
 
         Real u2 = 0;
-        for (int j = 0; j < n_cols; j++) {
+        for (int j = 0; j < n_rows; j++) {
             next_buffer_u[j] = RJstar[j];
             if (j < 5) {
                 printf("u[%i] = %f\n", j, next_buffer_u[j]);

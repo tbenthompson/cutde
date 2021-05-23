@@ -1,12 +1,11 @@
+from .aca import disp_aca, strain_aca  # noqa: F401
 from .fullspace import (  # noqa: F401
     disp,
-    disp_aca,
     disp_block,
     disp_free,
     disp_matrix,
     py_disp,
     strain,
-    strain_aca,
     strain_block,
     strain_free,
     strain_matrix,
