@@ -10,7 +10,7 @@ int buffer_alloc(GLOBAL_MEM int* next_ptr, int n_values) {
     % else:
         int out = atomic_add(next_ptr, n_values);
     % endif
-    printf("alloc! %i %i \n", out, n_values);
+    // printf("alloc! %i %i \n", out, n_values);
     return out;
 }
 
@@ -73,7 +73,7 @@ WITHIN_KERNEL struct MatrixIndex argmax_abs_not_in_list_${matrix_dim}(GLOBAL_MEM
 {
     for (int sr_idx = 0; sr_idx < ${n_terms}; sr_idx++) {
         int buffer_ptr = uv_ptrs[uv_ptr0 + sr_idx];
-        printf("buffer_ptr: %i k: %i n_terms: %i \n", buffer_ptr, sr_idx, ${n_terms});
+        // printf("buffer_ptr: %i k: %i n_terms: %i \n", buffer_ptr, sr_idx, ${n_terms});
 
         GLOBAL_MEM Real* U_term = &buffer[buffer_ptr];
         GLOBAL_MEM Real* V_term = &buffer[buffer_ptr + n_rows];
@@ -92,9 +92,6 @@ WITHIN_KERNEL struct MatrixIndex argmax_abs_not_in_list_${matrix_dim}(GLOBAL_MEM
                 Real uv = U_term[i];
                 for (int j = 0; j < n_rowcol; j++) {
                     Real vv = V_term[j + ${rowcol_start}];
-                    if (i == 0 && j == 0) {
-                        printf("subresid: %f %f\n", uv, vv);
-                    }
                     ${output}[i * n_rowcol + j] -= uv * vv;
                 }
             }
@@ -134,7 +131,6 @@ void calc_${matrix_dim}_${name}(
     int obs_dim_end = rowcol_end - block_i * ${vec_dim};
     int i = os + block_i;
     int obs_idx = 0;
-    // printf("rcs, i, s, e: %i, %i, %i, %i \n", rowcol_start, i, obs_dim_start, obs_dim_end);
 
     int src_dim_start = 0;
     int src_dim_end = 3;
@@ -148,7 +144,6 @@ void calc_${matrix_dim}_${name}(
     int src_dim_start = rowcol_start - block_j * 3;
     int src_dim_end = rowcol_end - block_j * 3;
     int j = ss + block_j;
-    // printf("j, s, e: %i, %i, %i \n", j, src_dim_start, src_dim_end);
     int src_idx = 0;
     int n_output_src = 1;
 
@@ -159,11 +154,9 @@ void calc_${matrix_dim}_${name}(
 
     % endif
         Real3 obs;
-        // printf("computing ${matrix_dim}_${name} %i %i \n", i, j);
         % for d1 in range(3):
             obs.${comp(d1)} = obs_pts[i * 3 + ${d1}];
         % endfor
-        // printf("obs: %f10 %f10 %f10 \n", obs.x, obs.y, obs.z);
 
 
         % for d1 in range(3):
@@ -171,9 +164,7 @@ void calc_${matrix_dim}_${name}(
             % for d2 in range(3):
                 tri${d1}.${comp(d2)} = tris[j * 9 + ${d1} * 3 + ${d2}];
             % endfor
-            // printf("tri${d1}: %f10 %f10 %f10 \n", tri${d1}.x, tri${d1}.y, tri${d1}.z);
         % endfor
-        // printf("nu: %f \n", nu);
 
         for (int d_src = src_dim_start; d_src < src_dim_end; d_src++) {
             Real3 slip = make3(0.0, 0.0, 0.0);
@@ -195,7 +186,6 @@ void calc_${matrix_dim}_${name}(
                     int idx = (
                         (obs_idx * ${vec_dim} + (${d_obs} - obs_dim_start)) * n_output_src + src_idx
                     ) * (src_dim_end - src_dim_start) + (d_src - src_dim_start);
-                    // printf("idx %i %f \n", idx, final.${comp(d_obs)});
                     output[idx] = final.${comp(d_obs)};
                 }
             }
@@ -262,7 +252,6 @@ void aca_${name}(
         RJref, Jref, Jref + 3, 
         obs_pts, tris, os, oe, ss, se, nu
     );
-    // printf("%f\n", RIref[0]);
 
     int max_iter = min(p_max_iter, min(n_rows / 2, n_cols / 2));
     // TODO:
@@ -275,13 +264,15 @@ void aca_${name}(
     Real frob_est = 0;
     int k = 0;
     for (; k < max_iter; k++) {
-        printf("\n\nstart iteration %i\n", k);
-        for (int i = 0; i < 5; i++) {
-            printf("RIref[%i] = %f\n", i, RIref[i]);
-        }
-        for (int j = 0; j < 5; j++) {
-            printf("RJref[%i] = %f\n", j, RJref[j]);
-        }
+        % if verbose:
+            printf("\n\nstart iteration %i\n", k);
+            for (int i = 0; i < 5; i++) {
+                printf("RIref[%i] = %f\n", i, RIref[i]);
+            }
+            for (int j = 0; j < 5; j++) {
+                printf("RJref[%i] = %f\n", j, RJref[j]);
+            }
+        % endif
 
         struct MatrixIndex Istar_entry = argmax_abs_not_in_list_rows(RJref, n_rows, 3, prevIstar, k);
         struct MatrixIndex Jstar_entry = argmax_abs_not_in_list_cols(RIref, ${vec_dim}, n_cols, prevJstar, k);
@@ -290,7 +281,11 @@ void aca_${name}(
 
         Real Istar_val = fabs(RJref[Istar_entry.row * 3 + Istar_entry.col]);
         Real Jstar_val = fabs(RIref[Jstar_entry.row * n_cols + Jstar_entry.col]);
-        printf("pivot guess %i %i %f %f \n", Istar, Jstar, Istar_val, Jstar_val);
+
+        % if verbose:
+            printf("pivot guess %i %i %f %f \n", Istar, Jstar, Istar_val, Jstar_val);
+        % endif
+
         if (Istar_val > Jstar_val) {
             calc_rows_${name}(
                 RIstar, Istar, Istar + 1,
@@ -299,7 +294,6 @@ void aca_${name}(
             ${sub_residual("RIstar", "Istar", "Istar + 1", "k", "rows", vec_dim)}
 
             Jstar_entry = argmax_abs_not_in_list_cols(RIstar, 1, n_cols, prevJstar, k);
-            printf("Jstar_entry: %i %i \n", Jstar_entry.row, Jstar_entry.col);
             Jstar = Jstar_entry.col;
 
             calc_cols_${name}(
@@ -314,13 +308,8 @@ void aca_${name}(
             );
             ${sub_residual("RJstar", "Jstar", "Jstar + 1", "k", "cols", vec_dim)}
 
-            for (int j = 0; j < 5; j++) {
-                printf("RJstar[%i] = %f\n", j, RJstar[j]);
-            }
-
 
             Istar_entry = argmax_abs_not_in_list_rows(RJstar, n_rows, 1, prevIstar, k);
-            printf("Istar_entry: %i %i \n", Istar_entry.row, Istar_entry.col);
             Istar = Istar_entry.row;
 
             calc_rows_${name}(
@@ -329,8 +318,16 @@ void aca_${name}(
             );
             ${sub_residual("RIstar", "Istar", "Istar + 1", "k", "rows", vec_dim)}
         }
-        printf("true pivot: %i %i \n", Istar, Jstar);
-        printf("diagonal %f \n", RIstar[Jstar]);
+        % if verbose:
+            printf("true pivot: %i %i \n", Istar, Jstar);
+            printf("diagonal %f \n", RIstar[Jstar]);
+            for (int i = 0; i < 5; i++) {
+                printf("RIstar[%i] = %f\n", i, RIstar[i]);
+            }
+            for (int j = 0; j < 5; j++) {
+                printf("RJstar[%i] = %f\n", j, RJstar[j]);
+            }
+        % endif
 
         prevIstar[k] = Istar;
         prevJstar[k] = Jstar;
@@ -348,26 +345,22 @@ void aca_${name}(
         Real v2 = 0;
         for (int i = 0; i < n_cols; i++) {
             next_buffer_v[i] = RIstar[i] / RIstar[Jstar];
-            if (i < 5) {
-                printf("v[%i] = %f\n", i, next_buffer_v[i]);
-            }
             v2 += next_buffer_v[i] * next_buffer_v[i];
         }
 
         Real u2 = 0;
         for (int j = 0; j < n_rows; j++) {
             next_buffer_u[j] = RJstar[j];
-            if (j < 5) {
-                printf("u[%i] = %f\n", j, next_buffer_u[j]);
-            }
             u2 += next_buffer_u[j] * next_buffer_u[j];
         }
 
         Real step_size = sqrt(u2 * v2);
 
-        printf("step_size %f \n", step_size);
         frob_est += step_size;
-        printf("frob_est: %f \n", frob_est);
+        % if verbose:
+            printf("step_size %f \n", step_size);
+            printf("frob_est: %f \n", frob_est);
+        % endif
 
         if (step_size < tol) {
             break;
@@ -382,7 +375,9 @@ void aca_${name}(
                 Iref = (Iref + ${vec_dim}) % n_rows;
                 Iref -= Iref % ${vec_dim};
                 if (!in(Iref, prevIstar, k + 1)) {
-                    printf("new Iref: %i \n", Iref);
+                    % if verbose:
+                        printf("new Iref: %i \n", Iref);
+                    % endif
                     break; 
                 }
             }
@@ -404,7 +399,9 @@ void aca_${name}(
                 Jref = (Jref + 3) % n_rows;
                 Jref -= Jref % 3;
                 if (!in(Jref, prevJstar, k + 1)) {
-                    printf("new Jref: %i \n", Jref);
+                    % if verbose:
+                        printf("new Jref: %i \n", Jref);
+                    % endif
                     break; 
                 }
             }

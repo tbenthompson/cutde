@@ -123,12 +123,14 @@ def ACA_plus(
     # And collect the corresponding blocks of rows/columns
     RIref, Iref = reset_reference_row(Iref)
     RJref, Jref = reset_reference_col(Jref)
-    print(Iref, Jref)
+    if verbose:
+        print(Iref, Jref)
 
     for k in range(max_iter):
-        print("start iteration", k)
-        print("RIref", RIref.flatten()[:5])
-        print("RJref", RJref.flatten()[:5])
+        if verbose:
+            print("start iteration", k)
+            print("RIref", RIref.flatten()[:5])
+            print("RJref", RJref.flatten()[:5])
         # These two lines find the column in RIref with the largest entry
         # (step 1 above).
         maxabsRIref = np.max(np.abs(RIref), axis=0)
@@ -141,7 +143,8 @@ def ACA_plus(
         # Check if we should pivot first based on row or based on column (step 2 above)
         Jstar_val = maxabsRIref[Jstar]
         Istar_val = maxabsRJref[Istar]
-        print(f"pivot guess {Istar}, {Jstar}, {Istar_val}, {Jstar_val}")
+        if verbose:
+            print(f"pivot guess {Istar}, {Jstar}, {Istar_val}, {Jstar_val}")
         if Istar_val > Jstar_val:
             # If we pivot first on the row, then calculate the corresponding row
             # of the residual matrix.
@@ -172,8 +175,9 @@ def ACA_plus(
         # Add the new rank-1 outer product to the approximation (see step 4 above)
         vs.append(RIstar / RIstar[Jstar])
         us.append(RJstar.copy())
-        print("us", us[-1][:5])
-        print("vs", vs[-1][:5])
+        if verbose:
+            print("us", us[-1][:5])
+            print("vs", vs[-1][:5])
 
         # How "large" was this update to the approximation?
         step_size = np.sqrt(np.sum(us[-1] ** 2) * np.sum(vs[-1] ** 2))

@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import py_aca
 from test_tde import setup_matrix_test
@@ -11,7 +13,9 @@ import cutde
 def test_aca():
     """
     This checks that the OpenCL/CUDA ACA implementation is producing *exactly*
-    the same results as the Python implementation.
+    the same results as the Python implementation and that both ACA
+    implementations are within the expected Frobenius norm tolerance of the
+    exact calculation.
     """
     dtype, F_ordered, field = np.float64, False, "disp"
 
@@ -26,7 +30,7 @@ def test_aca():
 
     pts = []
     tris = []
-    n_sets = 1
+    n_sets = 10
     set_sizes = np.arange(50, 50 + n_sets)
     set_sizes_edges = np.zeros(set_sizes.shape[0] + 1, dtype=np.int32)
     set_sizes_edges[1:] = np.cumsum(set_sizes)
@@ -53,8 +57,11 @@ def test_aca():
     M1 = matrix_fnc(pts, tris, 0.25)
     M1 = M1.reshape((M1.shape[0] * M1.shape[1], M1.shape[2] * M1.shape[3]))
 
+    start = time.time()
     M2 = aca_fnc(pts, tris, obs_starts, obs_ends, src_starts, src_ends, 0.25, 1e-4, 200)
+    print("aca", time.time() - start)
 
+    start = time.time()
     for block_idx in range(len(obs_starts)):
         os = obs_starts[block_idx]
         oe = obs_ends[block_idx]
@@ -69,7 +76,7 @@ def test_aca():
             lambda Istart, Iend: block[Istart:Iend, :],
             lambda Jstart, Jend: block[:, Jstart:Jend],
             1e-4,
-            verbose=True,
+            verbose=False,
             Iref=0,
             Jref=0,
         )
@@ -81,10 +88,9 @@ def test_aca():
         diff = block - U2.dot(V2)
         diff_frob = np.sqrt(np.sum(diff ** 2))
         block_frob = np.sqrt(np.sum(block ** 2))
-        print(diff_frob, block_frob, diff_frob / block_frob)
         assert diff_frob / block_frob < 1e-3
+    print("py_aca", time.time() - start)
 
 
 if __name__ == "__main__":
-    # test_aca(1)
     test_aca()

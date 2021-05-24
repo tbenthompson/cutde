@@ -38,11 +38,11 @@ def call_clu_aca(
         obs_start, obs_end, src_start, src_end
     )
 
-    # TODO: Implement a team for each block.
     default_chunk_size = 16
     n_blocks = obs_end.shape[0]
 
-    gpu_config = dict(float_type=cluda.np_to_c_type(float_type))
+    verbose = False
+    gpu_config = dict(float_type=cluda.np_to_c_type(float_type), verbose=verbose)
     module = cluda.load_gpu("aca.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
     n_chunks = int(ceil(n_blocks / default_chunk_size))
@@ -106,21 +106,22 @@ def call_clu_aca(
         gpu_src_start = cluda.to_gpu(src_start[chunk_start:chunk_end], np.int32)
         gpu_src_end = cluda.to_gpu(src_end[chunk_start:chunk_end], np.int32)
 
-        print(f"gpu_buffer.shape = {gpu_buffer.shape}")
-        print(f"gpu_uv_ptrs.shape = {gpu_uv_ptrs.shape}")
-        print(f"gpu_n_terms.shape = {gpu_n_terms.shape}")
-        print(f"gpu_next_ptr.shape = {gpu_next_ptr.shape}")
-        print(f"gpu_fworkspace.shape = {gpu_fworkspace.shape}")
-        print(f"gpu_iworkspace.shape = {gpu_iworkspace.shape}")
-        print(f"gpu_uv_ptrs_starts.shape = {gpu_uv_ptrs_starts.shape}")
-        print(f"gpu_Iref0.shape = {gpu_Iref0.shape}")
-        print(f"gpu_Jref0.shape = {gpu_Jref0.shape}")
-        print(f"obs_pts.shape = {obs_pts.shape}")
-        print(f"tris.shape = {tris.shape}")
-        print(f"gpu_obs_start.shape = {gpu_obs_start.shape}")
-        print(f"gpu_obs_end.shape = {gpu_obs_end.shape}")
-        print(f"gpu_src_start.shape = {gpu_src_start.shape}")
-        print(f"gpu_src_end.shape = {gpu_src_end.shape}")
+        if verbose:
+            print(f"gpu_buffer.shape = {gpu_buffer.shape}")
+            print(f"gpu_uv_ptrs.shape = {gpu_uv_ptrs.shape}")
+            print(f"gpu_n_terms.shape = {gpu_n_terms.shape}")
+            print(f"gpu_next_ptr.shape = {gpu_next_ptr.shape}")
+            print(f"gpu_fworkspace.shape = {gpu_fworkspace.shape}")
+            print(f"gpu_iworkspace.shape = {gpu_iworkspace.shape}")
+            print(f"gpu_uv_ptrs_starts.shape = {gpu_uv_ptrs_starts.shape}")
+            print(f"gpu_Iref0.shape = {gpu_Iref0.shape}")
+            print(f"gpu_Jref0.shape = {gpu_Jref0.shape}")
+            print(f"obs_pts.shape = {obs_pts.shape}")
+            print(f"tris.shape = {tris.shape}")
+            print(f"gpu_obs_start.shape = {gpu_obs_start.shape}")
+            print(f"gpu_obs_end.shape = {gpu_obs_end.shape}")
+            print(f"gpu_src_start.shape = {gpu_src_start.shape}")
+            print(f"gpu_src_end.shape = {gpu_src_end.shape}")
 
         getattr(module, "aca_" + fnc_name)(
             gpu_buffer,
