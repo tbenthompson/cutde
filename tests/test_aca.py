@@ -2,22 +2,22 @@ import time
 
 import numpy as np
 import py_aca
+import pytest
 from test_tde import setup_matrix_test
 
 import cutde
 
 
-# @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
-# @pytest.mark.parametrize("F_ordered", [True, False])
-# @pytest.mark.parametrize("field", ["disp", "strain"])
-def test_aca():
+@pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
+@pytest.mark.parametrize("F_ordered", [True, False])
+@pytest.mark.parametrize("field", ["disp", "strain"])
+def test_aca(dtype, F_ordered, field):
     """
     This checks that the OpenCL/CUDA ACA implementation is producing *exactly*
     the same results as the Python implementation and that both ACA
     implementations are within the expected Frobenius norm tolerance of the
     exact calculation.
     """
-    dtype, F_ordered, field = np.float64, False, "disp"
 
     if field == "disp":
         matrix_fnc = cutde.disp_matrix
@@ -79,16 +79,17 @@ def test_aca():
             verbose=False,
             Iref=0,
             Jref=0,
+            vec_dim=3 if field == "disp" else 6,
         )
 
         U2, V2 = M2[block_idx]
-        np.testing.assert_almost_equal(U, U2)
-        np.testing.assert_almost_equal(V, V2)
+        if pts.dtype.type is np.float32:
+            np.testing.assert_almost_equal(U, U2, 10)
+            np.testing.assert_almost_equal(V, V2, 10)
 
         diff = block - U2.dot(V2)
         diff_frob = np.sqrt(np.sum(diff ** 2))
-        block_frob = np.sqrt(np.sum(block ** 2))
-        assert diff_frob / block_frob < 1e-3
+        assert diff_frob < 5e-4
     print("py_aca", time.time() - start)
 
 

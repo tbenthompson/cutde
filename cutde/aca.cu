@@ -26,17 +26,6 @@ bool in(int target, GLOBAL_MEM int* arr, int n_arr) {
     return false;
 }
 
-WITHIN_KERNEL
-int new_reference_idx(int idx, int max_idx, GLOBAL_MEM int* prev_arr, int n_prev) {
-    while (true) {
-        idx = (idx + 3) % max_idx; 
-        idx -= idx % 3;
-        if (!in(idx, prev_arr, n_prev)) {
-            return idx;
-        }
-    }
-}
-
 struct MatrixIndex {
     int row;
     int col;
@@ -236,10 +225,10 @@ void aca_${name}(
     GLOBAL_MEM Real* RJstar = &block_fworkspace[n_cols];
 
     GLOBAL_MEM Real* RIref = &block_fworkspace[n_cols + n_rows];
-    GLOBAL_MEM Real* RJref = &block_fworkspace[n_cols + n_rows + 3 * n_cols];
+    GLOBAL_MEM Real* RJref = &block_fworkspace[n_cols + n_rows + ${vec_dim} * n_cols];
 
     int Iref = Iref0[block_idx];
-    Iref -= Iref % 3;
+    Iref -= Iref % ${vec_dim};
     int Jref = Jref0[block_idx];
     Jref -= Jref % 3;
 
@@ -254,12 +243,6 @@ void aca_${name}(
     );
 
     int max_iter = min(p_max_iter, min(n_rows / 2, n_cols / 2));
-    // TODO:
-    // TODO:
-    // TODO:
-    // TODO:
-    // max_iter = 1;
-
 
     Real frob_est = 0;
     int k = 0;
@@ -283,7 +266,7 @@ void aca_${name}(
         Real Jstar_val = fabs(RIref[Jstar_entry.row * n_cols + Jstar_entry.col]);
 
         % if verbose:
-            printf("pivot guess %i %i %f %f \n", Istar, Jstar, Istar_val, Jstar_val);
+            printf("pivot guess %i %i %e %e \n", Istar, Jstar, Istar_val, Jstar_val);
         % endif
 
         if (Istar_val > Jstar_val) {
@@ -318,16 +301,6 @@ void aca_${name}(
             );
             ${sub_residual("RIstar", "Istar", "Istar + 1", "k", "rows", vec_dim)}
         }
-        % if verbose:
-            printf("true pivot: %i %i \n", Istar, Jstar);
-            printf("diagonal %f \n", RIstar[Jstar]);
-            for (int i = 0; i < 5; i++) {
-                printf("RIstar[%i] = %f\n", i, RIstar[i]);
-            }
-            for (int j = 0; j < 5; j++) {
-                printf("RJstar[%i] = %f\n", j, RJstar[j]);
-            }
-        % endif
 
         prevIstar[k] = Istar;
         prevJstar[k] = Jstar;
@@ -353,6 +326,16 @@ void aca_${name}(
             next_buffer_u[j] = RJstar[j];
             u2 += next_buffer_u[j] * next_buffer_u[j];
         }
+        % if verbose:
+            printf("true pivot: %i %i \n", Istar, Jstar);
+            printf("diagonal %f \n", RIstar[Jstar]);
+            for (int i = 0; i < 5; i++) {
+                printf("u[%i] = %f\n", i, next_buffer_u[i]);
+            }
+            for (int j = 0; j < 5; j++) {
+                printf("v[%i] = %f\n", j, next_buffer_v[j]);
+            }
+        % endif
 
         Real step_size = sqrt(u2 * v2);
 
@@ -394,7 +377,7 @@ void aca_${name}(
             }
         }
 
-        if (Jref <= Jstar && Jstar < Jref + ${vec_dim}) {
+        if (Jref <= Jstar && Jstar < Jref + 3) {
             while (true) {
                 Jref = (Jref + 3) % n_rows;
                 Jref -= Jref % 3;
@@ -423,9 +406,5 @@ void aca_${name}(
 }
 </%def>
 
-//TODO: 
-//TODO: 
-//TODO: 
-//TODO: 
-//TODO: add strain back in
 ${aca("disp", common.disp, 3)}
+${aca("strain", common.strain, 6)}

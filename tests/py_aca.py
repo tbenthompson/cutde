@@ -107,10 +107,6 @@ def ACA_plus(
     else:
         max_iter = np.min([n_rows, n_cols, max_iter])
 
-    # Create a buffer for storing the R_{i^*,j} and R_{i, j^*}
-    RIstar = np.zeros(n_cols)
-    RJstar = np.zeros(n_rows)
-
     # Choose our starting random reference row and column.
     # These will get incremented by 3 inside reset_reference_row
     # so pre-subtract that.
@@ -125,6 +121,10 @@ def ACA_plus(
     RJref, Jref = reset_reference_col(Jref)
     if verbose:
         print(Iref, Jref)
+
+    # Create a buffer for storing the R_{i^*,j} and R_{i, j^*}
+    RIstar = np.zeros(n_cols, dtype=RIref.dtype)
+    RJstar = np.zeros(n_rows, dtype=RIref.dtype)
 
     for k in range(max_iter):
         if verbose:
@@ -225,8 +225,8 @@ def ACA_plus(
     # Return the left and right approximation matrices.
     # The approximate is such that:
     # M ~ U_ACA.dot(V_ACA)
-    U_ACA = np.array(us).T
-    V_ACA = np.array(vs)
+    U_ACA = np.array(us, dtype=RIref.dtype).T
+    V_ACA = np.array(vs, dtype=RIref.dtype)
 
     return U_ACA, V_ACA
 
