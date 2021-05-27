@@ -83,7 +83,7 @@ def test_aca(dtype, F_ordered, field):
         )
 
         U2, V2 = M2[block_idx]
-        if pts.dtype.type is np.float32:
+        if pts.dtype.type is np.float64:
             np.testing.assert_almost_equal(U, U2, 10)
             np.testing.assert_almost_equal(V, V2, 10)
 
