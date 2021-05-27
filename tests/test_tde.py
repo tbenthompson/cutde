@@ -1,5 +1,3 @@
-import logging
-import sys
 import time
 
 import numpy as np
@@ -7,24 +5,6 @@ import pytest
 import scipy.io
 
 import cutde
-
-
-def enable_logging():
-    root = logging.getLogger()
-    level = logging.INFO
-    # level = logging.DEBUG
-    root.setLevel(level)
-
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(level)
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-enable_logging()
 
 
 def get_pt_grid():

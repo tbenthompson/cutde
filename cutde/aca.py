@@ -29,7 +29,18 @@ def strain_aca(
 
 
 def call_clu_aca(
-    obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter, fnc
+    obs_pts,
+    tris,
+    obs_start,
+    obs_end,
+    src_start,
+    src_end,
+    nu,
+    tol,
+    max_iter,
+    fnc,
+    Iref0=None,
+    Jref0=None,
 ):
     fnc_name, vec_dim = fnc
     check_inputs(obs_pts, tris, placeholder)
@@ -39,6 +50,7 @@ def call_clu_aca(
     )
 
     default_chunk_size = 16
+    team_size = 1
     n_blocks = obs_end.shape[0]
 
     verbose = False
@@ -90,14 +102,16 @@ def call_clu_aca(
         gpu_next_ptr = cluda.zeros_gpu(1, np.int32)
 
         # The index of the starting reference rows/cols.
-        # TODO:
-        # TODO:
-        # TODO:
-        # TODO:
-        Iref0 = 0 * (np.random.rand(chunk_size) * n_rows).astype(np.int32)
-        Jref0 = 0 * (np.random.rand(chunk_size) * n_cols).astype(np.int32)
-        gpu_Iref0 = cluda.to_gpu(Iref0, np.int32)
-        gpu_Jref0 = cluda.to_gpu(Jref0, np.int32)
+        if Iref0 is None:
+            Iref0_chunk = (np.random.rand(chunk_size) * n_rows).astype(np.int32)
+        else:
+            Iref0_chunk = Iref0[chunk_start:chunk_end]
+        if Jref0 is None:
+            Jref0_chunk = (np.random.rand(chunk_size) * n_cols).astype(np.int32)
+        else:
+            Jref0_chunk = Jref0[chunk_start:chunk_end]
+        gpu_Iref0 = cluda.to_gpu(Iref0_chunk, np.int32)
+        gpu_Jref0 = cluda.to_gpu(Jref0_chunk, np.int32)
 
         gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
         gpu_tris = cluda.to_gpu(tris, float_type)
@@ -144,7 +158,7 @@ def call_clu_aca(
             float_type(tol),
             np.int32(max_iter),
             grid=(chunk_size, 1, 1),
-            block=(1, 1, 1),
+            block=(team_size, 1, 1),
         )
 
         # post-process the buffer to collect the U, V vectors

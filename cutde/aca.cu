@@ -203,7 +203,8 @@ void aca_${name}(
     GLOBAL_MEM int* src_start, GLOBAL_MEM int* src_end,
     Real nu, Real tol, int p_max_iter)
 {
-    int block_idx = get_global_id(0);
+    int block_idx = get_group_id(0);
+    int team_idx = get_local_id(0);
     int os = obs_start[block_idx];
     int oe = obs_end[block_idx];
     int n_obs = oe - os;
