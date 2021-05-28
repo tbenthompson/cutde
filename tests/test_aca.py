@@ -135,8 +135,8 @@ def runner(
 
             if pts.dtype.type is np.float64:
                 U2, V2 = M2[block_idx]
-                np.testing.assert_almost_equal(U, U2, 10)
-                np.testing.assert_almost_equal(V, V2, 10)
+                np.testing.assert_almost_equal(U, U2, 9)
+                np.testing.assert_almost_equal(V, V2, 9)
 
         diff = block - U2.dot(V2)
         diff_frob = np.sqrt(np.sum(diff ** 2))
