@@ -258,6 +258,11 @@ void aca_${name}(
 
     int max_iter = min(p_max_iter, min(n_rows / 2, n_cols / 2));
 
+    // Some OpenCL implementations require LOCAL_MEM to be defined at the
+    // outermost scope of a function. Otherwise this would be defined next to
+    // the single-threaded section that uses it.
+    LOCAL_MEM bool done[1];
+
     Real frob_est = 0;
     int k = 0;
     for (; k < max_iter; k++) {
@@ -330,7 +335,6 @@ void aca_${name}(
 
         // claim a block of space for the first U and first V vectors and collect
         // the corresponding Real* pointers
-        LOCAL_MEM bool done[1];
         if (team_idx == 0) {
             done[0] = false;
 
