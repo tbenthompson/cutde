@@ -49,7 +49,7 @@ def call_clu_aca(
         obs_start, obs_end, src_start, src_end
     )
 
-    default_chunk_size = 128
+    default_chunk_size = 512
     team_size = 32
     n_blocks = obs_end.shape[0]
 
@@ -170,9 +170,10 @@ def call_clu_aca(
             us = []
             vs = []
             uv_ptr0 = uv_ptrs_starts[i]
-            for k in range(n_terms[i]):
-                ptr = uv_ptrs[uv_ptr0 + k]
-                us.append(buffer[ptr : (ptr + n_rows[i])])
-                vs.append(buffer[(ptr + n_rows[i]) : (ptr + n_rows[i] + n_cols[i])])
-            appxs.append((np.array(us).T, np.array(vs)))
+            ptrs = uv_ptrs[uv_ptr0 + np.arange(n_terms[i])]
+            us = buffer[ptrs[:, None] + np.arange(n_rows[i])[None, :]]
+            vs = buffer[
+                ptrs[:, None] + np.arange(n_rows[i], n_rows[i] + n_cols[i])[None, :]
+            ]
+            appxs.append((us.T, vs))
     return appxs

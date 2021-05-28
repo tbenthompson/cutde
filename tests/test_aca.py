@@ -102,16 +102,14 @@ def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=
         # ignore the first runtime since it includes compilation and CUDA initialization
         print("aca runtime, min=", np.min(times[1:]), "  median=", np.median(times[1:]))
 
-    if compare_against_py:
-        start = time.time()
-        for block_idx in range(len(obs_starts)):
-            os = obs_starts[block_idx]
-            oe = obs_ends[block_idx]
-            ss = src_starts[block_idx]
-            se = src_ends[block_idx]
-
-            block = M1[(os * vec_dim) : (oe * vec_dim), (3 * ss) : (3 * se)]
-
+    for block_idx in range(len(obs_starts)):
+        os = obs_starts[block_idx]
+        oe = obs_ends[block_idx]
+        ss = src_starts[block_idx]
+        se = src_ends[block_idx]
+        block = M1[(os * vec_dim) : (oe * vec_dim), (3 * ss) : (3 * se)]
+        U2, V2 = M2[block_idx]
+        if compare_against_py:
             U, V = py_aca.ACA_plus(
                 block.shape[0],
                 block.shape[1],
@@ -124,23 +122,15 @@ def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=
                 vec_dim=3 if field == "disp" else 6,
             )
 
-        if pts.dtype.type is np.float64:
-            U2, V2 = M2[block_idx]
-            np.testing.assert_almost_equal(U, U2, 10)
-            np.testing.assert_almost_equal(V, V2, 10)
-        print("py_aca", time.time() - start)
+            if pts.dtype.type is np.float64:
+                U2, V2 = M2[block_idx]
+                np.testing.assert_almost_equal(U, U2, 10)
+                np.testing.assert_almost_equal(V, V2, 10)
 
-    for block_idx in range(len(obs_starts)):
-        os = obs_starts[block_idx]
-        oe = obs_ends[block_idx]
-        ss = src_starts[block_idx]
-        se = src_ends[block_idx]
-        block = M1[(os * vec_dim) : (oe * vec_dim), (3 * ss) : (3 * se)]
-        U2, V2 = M2[block_idx]
         diff = block - U2.dot(V2)
         diff_frob = np.sqrt(np.sum(diff ** 2))
         assert diff_frob < 5e-4
 
 
 if __name__ == "__main__":
-    runner(np.float64, False, "disp", 10, compare_against_py=False, benchmark=True)
+    runner(np.float32, False, "disp", 40, compare_against_py=False, benchmark=True)

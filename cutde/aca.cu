@@ -455,3 +455,4 @@ void aca_${name}(
 </%def>
 
 ${aca("disp", common.disp, 3)}
+${aca("strain", common.strain, 6)}
