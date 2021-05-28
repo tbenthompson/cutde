@@ -110,7 +110,6 @@ def call_clu_aca(
             Jref0_chunk = np.random.randint(0, n_cols, size=chunk_size, dtype=np.int32)
         else:
             Jref0_chunk = Jref0[chunk_start:chunk_end]
-        __import__("ipdb").set_trace()
         gpu_Iref0 = cluda.to_gpu(Iref0_chunk, np.int32)
         gpu_Jref0 = cluda.to_gpu(Jref0_chunk, np.int32)
 
