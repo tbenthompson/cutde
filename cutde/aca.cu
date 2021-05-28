@@ -71,13 +71,13 @@ WITHIN_KERNEL struct MatrixIndex argmax_abs_not_in_list_${matrix_dim}(GLOBAL_MEM
         % if matrix_dim == "rows":
             for (int i = 0; i < n_rowcol; i++) {
                 Real uv = U_term[i + ${rowcol_start}];
-                for (int j = 0; j < n_cols; j++) {
+                for (int j = team_idx; j < n_cols; j += team_size) {
                     Real vv = V_term[j];
                     ${output}[i * n_cols + j] -= uv * vv;
                 }
             }
         % else:
-            for (int i = 0; i < n_rows; i++) {
+            for (int i = team_idx; i < n_rows; i += team_size) {
                 Real uv = U_term[i];
                 for (int j = 0; j < n_rowcol; j++) {
                     Real vv = V_term[j + ${rowcol_start}];
@@ -98,7 +98,7 @@ void calc_${matrix_dim}_${name}(
     int rowcol_start, int rowcol_end,
     GLOBAL_MEM Real* obs_pts, GLOBAL_MEM Real* tris,
     int os, int oe, int ss, int se,
-    Real nu)
+    Real nu, int team_idx, int team_size)
 {
     /*
     * In the calc_rows/cols function, we will calculate a batch of rows or
@@ -121,11 +121,23 @@ void calc_${matrix_dim}_${name}(
     int i = os + block_i;
     int obs_idx = 0;
 
+    Real3 obs;
+    % for d1 in range(3):
+        obs.${comp(d1)} = obs_pts[i * 3 + ${d1}];
+    % endfor
+
     int src_dim_start = 0;
     int src_dim_end = 3;
     int n_output_src = n_src;
-    for (int j = ss; j < se; j++) {
+    for (int j = ss + team_idx; j < se; j += team_size) {
         int src_idx = j - ss;
+
+        % for d1 in range(3):
+            Real3 tri${d1};
+            % for d2 in range(3):
+                tri${d1}.${comp(d2)} = tris[j * 9 + ${d1} * 3 + ${d2}];
+            % endfor
+        % endfor
 
     % else:
 
@@ -136,25 +148,24 @@ void calc_${matrix_dim}_${name}(
     int src_idx = 0;
     int n_output_src = 1;
 
+    % for d1 in range(3):
+        Real3 tri${d1};
+        % for d2 in range(3):
+            tri${d1}.${comp(d2)} = tris[j * 9 + ${d1} * 3 + ${d2}];
+        % endfor
+    % endfor
+
     int obs_dim_start = 0;
     int obs_dim_end = ${vec_dim};
-    for (int i = os; i < oe; i++) {
+    for (int i = os + team_idx; i < oe; i += team_size) {
         int obs_idx = i - os;
 
-    % endif
         Real3 obs;
         % for d1 in range(3):
             obs.${comp(d1)} = obs_pts[i * 3 + ${d1}];
         % endfor
 
-
-        % for d1 in range(3):
-            Real3 tri${d1};
-            % for d2 in range(3):
-                tri${d1}.${comp(d2)} = tris[j * 9 + ${d1} * 3 + ${d2}];
-            % endfor
-        % endfor
-
+    % endif
         for (int d_src = src_dim_start; d_src < src_dim_end; d_src++) {
             Real3 slip = make3(0.0, 0.0, 0.0);
             if (d_src == 0) {
@@ -201,7 +212,7 @@ void aca_${name}(
     GLOBAL_MEM Real* obs_pts, GLOBAL_MEM Real* tris,
     GLOBAL_MEM int* obs_start, GLOBAL_MEM int* obs_end,
     GLOBAL_MEM int* src_start, GLOBAL_MEM int* src_end,
-    Real nu, Real tol, int p_max_iter)
+    Real nu, Real tol, int p_max_iter, int team_size)
 {
     int block_idx = get_group_id(0);
     int team_idx = get_local_id(0);
@@ -235,12 +246,14 @@ void aca_${name}(
 
     calc_rows_${name}(
         RIref, Iref, Iref + ${vec_dim},
-        obs_pts, tris, os, oe, ss, se, nu
+        obs_pts, tris, os, oe, ss, se, nu,
+        team_idx, team_size
     );
 
     calc_cols_${name}(
         RJref, Jref, Jref + 3, 
-        obs_pts, tris, os, oe, ss, se, nu
+        obs_pts, tris, os, oe, ss, se, nu,
+        team_idx, team_size
     );
 
     int max_iter = min(p_max_iter, min(n_rows / 2, n_cols / 2));
@@ -248,6 +261,7 @@ void aca_${name}(
     Real frob_est = 0;
     int k = 0;
     for (; k < max_iter; k++) {
+        LOCAL_BARRIER;
         % if verbose:
             printf("\n\nstart iteration %i\n", k);
             for (int i = 0; i < 5; i++) {
@@ -273,24 +287,32 @@ void aca_${name}(
         if (Istar_val > Jstar_val) {
             calc_rows_${name}(
                 RIstar, Istar, Istar + 1,
-                obs_pts, tris, os, oe, ss, se, nu
+                obs_pts, tris, os, oe, ss, se, nu,
+                team_idx, team_size
             );
+            LOCAL_BARRIER;
             ${sub_residual("RIstar", "Istar", "Istar + 1", "k", "rows", vec_dim)}
+            LOCAL_BARRIER;
 
             Jstar_entry = argmax_abs_not_in_list_cols(RIstar, 1, n_cols, prevJstar, k);
             Jstar = Jstar_entry.col;
 
             calc_cols_${name}(
                 RJstar, Jstar, Jstar + 1,
-                obs_pts, tris, os, oe, ss, se, nu
+                obs_pts, tris, os, oe, ss, se, nu,
+                team_idx, team_size
             );
+            LOCAL_BARRIER;
             ${sub_residual("RJstar", "Jstar", "Jstar + 1", "k", "cols", vec_dim)}
         } else {
             calc_cols_${name}(
                 RJstar, Jstar, Jstar + 1,
-                obs_pts, tris, os, oe, ss, se, nu
+                obs_pts, tris, os, oe, ss, se, nu,
+                team_idx, team_size
             );
+            LOCAL_BARRIER;
             ${sub_residual("RJstar", "Jstar", "Jstar + 1", "k", "cols", vec_dim)}
+            LOCAL_BARRIER;
 
 
             Istar_entry = argmax_abs_not_in_list_rows(RJstar, n_rows, 1, prevIstar, k);
@@ -298,59 +320,74 @@ void aca_${name}(
 
             calc_rows_${name}(
                 RIstar, Istar, Istar + 1,
-                obs_pts, tris, os, oe, ss, se, nu
+                obs_pts, tris, os, oe, ss, se, nu,
+                team_idx, team_size
             );
+            LOCAL_BARRIER;
             ${sub_residual("RIstar", "Istar", "Istar + 1", "k", "rows", vec_dim)}
         }
-
-        prevIstar[k] = Istar;
-        prevJstar[k] = Jstar;
+        LOCAL_BARRIER;
 
         // claim a block of space for the first U and first V vectors and collect
         // the corresponding Real* pointers
-        int next_buffer_u_ptr = buffer_alloc(next_buffer_ptr, n_rows + n_cols);
-        int next_buffer_v_ptr = next_buffer_u_ptr + n_rows;
-        GLOBAL_MEM Real* next_buffer_u = &buffer[next_buffer_u_ptr];
-        GLOBAL_MEM Real* next_buffer_v = &buffer[next_buffer_v_ptr];
+        LOCAL_MEM bool done[1];
+        if (team_idx == 0) {
+            done[0] = false;
 
-        // Assign our uv_ptr to point to the u,v buffer location.
-        uv_ptrs[uv_ptr0 + k] = next_buffer_u_ptr;
+            prevIstar[k] = Istar;
+            prevJstar[k] = Jstar;
 
-        Real v2 = 0;
-        for (int i = 0; i < n_cols; i++) {
-            next_buffer_v[i] = RIstar[i] / RIstar[Jstar];
-            v2 += next_buffer_v[i] * next_buffer_v[i];
-        }
+            int next_buffer_u_ptr = buffer_alloc(next_buffer_ptr, n_rows + n_cols);
+            int next_buffer_v_ptr = next_buffer_u_ptr + n_rows;
+            GLOBAL_MEM Real* next_buffer_u = &buffer[next_buffer_u_ptr];
+            GLOBAL_MEM Real* next_buffer_v = &buffer[next_buffer_v_ptr];
 
-        Real u2 = 0;
-        for (int j = 0; j < n_rows; j++) {
-            next_buffer_u[j] = RJstar[j];
-            u2 += next_buffer_u[j] * next_buffer_u[j];
-        }
-        % if verbose:
-            printf("true pivot: %i %i \n", Istar, Jstar);
-            printf("diagonal %f \n", RIstar[Jstar]);
-            for (int i = 0; i < 5; i++) {
-                printf("u[%i] = %f\n", i, next_buffer_u[i]);
+            // Assign our uv_ptr to point to the u,v buffer location.
+            uv_ptrs[uv_ptr0 + k] = next_buffer_u_ptr;
+
+            Real v2 = 0;
+            // TODO: team_idx!!!
+            for (int i = 0; i < n_cols; i++) {
+                next_buffer_v[i] = RIstar[i] / RIstar[Jstar];
+                v2 += next_buffer_v[i] * next_buffer_v[i];
             }
-            for (int j = 0; j < 5; j++) {
-                printf("v[%i] = %f\n", j, next_buffer_v[j]);
+
+            Real u2 = 0;
+            for (int j = 0; j < n_rows; j++) {
+                next_buffer_u[j] = RJstar[j];
+                u2 += next_buffer_u[j] * next_buffer_u[j];
             }
-        % endif
 
-        Real step_size = sqrt(u2 * v2);
+            % if verbose:
+                printf("true pivot: %i %i \n", Istar, Jstar);
+                printf("diagonal %f \n", RIstar[Jstar]);
+                for (int i = 0; i < 5; i++) {
+                    printf("u[%i] = %f\n", i, next_buffer_u[i]);
+                }
+                for (int j = 0; j < 5; j++) {
+                    printf("v[%i] = %f\n", j, next_buffer_v[j]);
+                }
+            % endif
 
-        frob_est += step_size;
-        % if verbose:
-            printf("step_size %f \n", step_size);
-            printf("frob_est: %f \n", frob_est);
-        % endif
+            Real step_size = sqrt(u2 * v2);
 
-        if (step_size < tol) {
-            break;
+            frob_est += step_size;
+            % if verbose:
+                printf("step_size %f \n", step_size);
+                printf("frob_est: %f \n", frob_est);
+            % endif
+
+            if (step_size < tol) {
+                done[0] = true;
+            }
+
+            if (k == max_iter - 1) {
+                done[0] = true;
+            }
         }
+        LOCAL_BARRIER;
 
-        if (k == max_iter - 1) {
+        if (done[0]) {
             break;
         }
 
@@ -367,12 +404,16 @@ void aca_${name}(
             }
             calc_rows_${name}(
                 RIref, Iref, Iref + ${vec_dim},
-                obs_pts, tris, os, oe, ss, se, nu
+                obs_pts, tris, os, oe, ss, se, nu,
+                team_idx, team_size
             );
+            LOCAL_BARRIER;
             ${sub_residual("RIref", "Iref", "Iref + " + str(vec_dim), "k + 1", "rows", vec_dim)}
         } else {
+            GLOBAL_MEM Real* next_buffer_u = &buffer[uv_ptrs[uv_ptr0 + k]];
+            GLOBAL_MEM Real* next_buffer_v = &buffer[uv_ptrs[uv_ptr0 + k] + n_rows];
             for (int i = 0; i < ${vec_dim}; i++) {
-                for (int j = 0; j < n_cols; j++) {
+                for (int j = team_idx; j < n_cols; j += team_size) {
                     RIref[i * n_cols + j] -= next_buffer_u[i + Iref] * next_buffer_v[j];
                 }
             }
@@ -391,11 +432,15 @@ void aca_${name}(
             }
             calc_cols_${name}(
                 RJref, Jref, Jref + 3, 
-                obs_pts, tris, os, oe, ss, se, nu
+                obs_pts, tris, os, oe, ss, se, nu,
+                team_idx, team_size
             );
+            LOCAL_BARRIER;
             ${sub_residual("RJref", "Jref", "Jref + 3", "k + 1", "cols", vec_dim)}
         } else {
-            for (int i = 0; i < n_rows; i++) {
+            GLOBAL_MEM Real* next_buffer_u = &buffer[uv_ptrs[uv_ptr0 + k]];
+            GLOBAL_MEM Real* next_buffer_v = &buffer[uv_ptrs[uv_ptr0 + k] + n_rows];
+            for (int i = team_idx; i < n_rows; i += team_size) {
                 for (int j = 0; j < 3; j++) {
                     RJref[i * 3 + j] -= next_buffer_u[i] * next_buffer_v[j + Jref];
                 }
@@ -403,9 +448,10 @@ void aca_${name}(
         }
     }
 
-    n_terms[block_idx] = k + 1;
+    if (team_idx == 0) {
+        n_terms[block_idx] = k + 1;
+    }
 }
 </%def>
 
 ${aca("disp", common.disp, 3)}
-${aca("strain", common.strain, 6)}

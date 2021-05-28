@@ -49,8 +49,8 @@ def call_clu_aca(
         obs_start, obs_end, src_start, src_end
     )
 
-    default_chunk_size = 16
-    team_size = 1
+    default_chunk_size = 128
+    team_size = 32
     n_blocks = obs_end.shape[0]
 
     verbose = False
@@ -103,13 +103,14 @@ def call_clu_aca(
 
         # The index of the starting reference rows/cols.
         if Iref0 is None:
-            Iref0_chunk = (np.random.rand(chunk_size) * n_rows).astype(np.int32)
+            Iref0_chunk = np.random.randint(0, n_rows, size=chunk_size, dtype=np.int32)
         else:
             Iref0_chunk = Iref0[chunk_start:chunk_end]
         if Jref0 is None:
-            Jref0_chunk = (np.random.rand(chunk_size) * n_cols).astype(np.int32)
+            Jref0_chunk = np.random.randint(0, n_cols, size=chunk_size, dtype=np.int32)
         else:
             Jref0_chunk = Jref0[chunk_start:chunk_end]
+        __import__("ipdb").set_trace()
         gpu_Iref0 = cluda.to_gpu(Iref0_chunk, np.int32)
         gpu_Jref0 = cluda.to_gpu(Jref0_chunk, np.int32)
 
@@ -157,6 +158,7 @@ def call_clu_aca(
             float_type(nu),
             float_type(tol),
             np.int32(max_iter),
+            np.int32(team_size),
             grid=(chunk_size, 1, 1),
             block=(team_size, 1, 1),
         )

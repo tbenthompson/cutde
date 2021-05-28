@@ -80,7 +80,8 @@ class ModuleWrapper:
 
 def compile(code):
     ensure_initialized()
-    compiler_args = ["--use_fast_math", "--restrict"]
+    # compiler_args = ["--use_fast_math", "--restrict"]
+    compiler_args = []
     return ModuleWrapper(pycuda.compiler.SourceModule(code, options=compiler_args))
 
 
