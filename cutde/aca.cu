@@ -421,7 +421,7 @@ void aca_${name}(
 
         if (Jref <= Jstar && Jstar < Jref + 3) {
             while (true) {
-                Jref = (Jref + 3) % n_rows;
+                Jref = (Jref + 3) % n_cols;
                 Jref -= Jref % 3;
                 if (!in(Jref, prevJstar, k + 1)) {
                     % if verbose:
