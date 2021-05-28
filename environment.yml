@@ -6,6 +6,7 @@ dependencies:
   - scipy
   - matplotlib
   - pyproj
+  - proj
   - black
   - flake8
   - isort

@@ -6,8 +6,8 @@ import pytest
 
 def enable_logging():
     root = logging.getLogger()
-    level = logging.INFO
-    # level = logging.DEBUG
+    # level = logging.INFO
+    level = logging.DEBUG
     root.setLevel(level)
 
     handler = logging.StreamHandler(sys.stdout)

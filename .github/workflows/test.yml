@@ -40,6 +40,7 @@ jobs:
         isort --check . 
     - name: Test
       run: |
+        rm -r ~/.cache/pocl/kcache
         CFLAGS='-stdlib=libc++' pytest --runslow --cov=./ --cov-report=xml
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v1

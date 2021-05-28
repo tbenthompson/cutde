@@ -19,9 +19,7 @@ def report_devices(ctx):
 def initialize_with_ctx(ctx):
     global gpu_initialized, gpu_ctx, gpu_queue
     gpu_ctx = ctx
-    gpu_queue = pyopencl.CommandQueue(
-        gpu_ctx, properties=pyopencl.command_queue_properties.PROFILING_ENABLE
-    )
+    gpu_queue = pyopencl.CommandQueue(gpu_ctx)
     gpu_initialized = True
 
     report_devices(ctx)
