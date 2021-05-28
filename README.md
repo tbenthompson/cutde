@@ -1,5 +1,5 @@
 <p align=center>
-    <a target="_blank" href="https://www.python.org/downloads/" title="Python version"><img src="https://img.shields.io/badge/python-%3E=_3.6-green.svg"></a>
+    <a target="_blank" href="https://www.python.org/downloads/" title="Python version"><img src="https://img.shields.io/badge/python-%3E=_3.7-green.svg"></a>
     <a target="_blank" href="https://pypi.org/project/cutde/" title="PyPI version"><img src="https://img.shields.io/pypi/v/cutde?logo=pypi"></a>
     <!-- <a target="_blank" href="https://pypi.org/project/cutde/" title="PyPI"><img src="https://img.shields.io/pypi/dm/cutde"></a> -->
     <a target="_blank" href="LICENSE" title="License: MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
@@ -19,6 +19,7 @@ See below for basic usage and installation instructions. For more realistic usag
 <!--ts-->
    * [Python + CUDA TDEs from Nikkhoo and Walter 2015](#python--cuda-tdes-from-nikkhoo-and-walter-2015)
    * [Usage documentation](#usage-documentation)
+      * [Simple pair-wise TDEs](#simple-pair-wise-tdes)
       * [I want stress.](#i-want-stress)
       * [All pairs interactions matrix](#all-pairs-interactions-matrix)
       * [Matrix-free all pairs interactions](#matrix-free-all-pairs-interactions)
@@ -34,7 +35,7 @@ See below for basic usage and installation instructions. For more realistic usag
       * [Why can't I use Apple CPU OpenCL?](#why-cant-i-use-apple-cpu-opencl)
    * [Development](#development)
 
-<!-- Added by: tbent, at: Fri 28 May 2021 01:39:22 PM EDT -->
+<!-- Added by: tbent, at: Fri 28 May 2021 02:29:30 PM EDT -->
 
 <!--te-->
 
@@ -53,9 +54,7 @@ pts = np.array([obsx, obsy, 0 * obsy]).reshape((3, -1)).T.copy()
 fault_pts = np.array([[-1, 0, 0], [1, 0, 0], [1, 0, -1], [-1, 0, -1]])
 fault_tris = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
 
-disp_mat = cutde.disp_matrix(
-    obs_pts=pts, tris=fault_pts[fault_tris], nu=0.25
-)
+disp_mat = cutde.disp_matrix(obs_pts=pts, tris=fault_pts[fault_tris], nu=0.25)
 
 slip = np.array([[1, 0, 0], [1, 0, 0]])
 disp = disp_mat.reshape((-1, 6)).dot(slip.flatten())
@@ -65,7 +64,13 @@ disp_grid = disp.reshape((*obsx.shape, 3))
 plt.figure(figsize=(5, 5), dpi=300)
 cntf = plt.contourf(obsx, obsy, disp_grid[:, :, 0], levels=21)
 plt.contour(
-    obsx, obsy, disp_grid[:, :, 0], colors="k", linestyles="-", linewidths=0.5, levels=21
+    obsx,
+    obsy,
+    disp_grid[:, :, 0],
+    colors="k",
+    linestyles="-",
+    linewidths=0.5,
+    levels=21,
 )
 plt.colorbar(cntf)
 plt.title("$u_x$")
@@ -77,6 +82,7 @@ plt.savefig("docs/example.png", bbox_inches="tight")
 ![docs/example.png](docs/example.png)
 
 # Usage documentation
+## Simple pair-wise TDEs
 
 Computing TDEs for observation point/source element pairs is really simple:
 
