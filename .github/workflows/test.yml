@@ -38,6 +38,8 @@ jobs:
     - name: Check import ordering with isort
       run: |
         isort --check . 
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Test
       run: |
         CFLAGS='-stdlib=libc++' pytest --runslow --cov=./ --cov-report=xml
