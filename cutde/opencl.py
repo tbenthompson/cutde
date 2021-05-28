@@ -135,9 +135,9 @@ def compile(code):
     # compile_options.extend(debug_opts)
     fast_opts = [
         # '-cl-finite-math-only',
-        # "-cl-unsafe-math-optimizations",
+        "-cl-unsafe-math-optimizations",
         # '-cl-no-signed-zeros',
-        # "-cl-mad-enable",
+        "-cl-mad-enable",
         # '-cl-strict-aliasing'
     ]
     compile_options.extend(fast_opts)

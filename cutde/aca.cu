@@ -10,7 +10,6 @@ int buffer_alloc(GLOBAL_MEM int* next_ptr, int n_values) {
     % else:
         int out = atomic_add(next_ptr, n_values);
     % endif
-    // printf("alloc! %i %i \n", out, n_values);
     return out;
 }
 
@@ -44,16 +43,13 @@ WITHIN_KERNEL struct MatrixIndex argmax_abs_not_in_list_${matrix_dim}(GLOBAL_MEM
             % else:
             int relevant_idx = j;
             % endif
-            // printf("cmp %f %f %i %i \n", v, max_val, relevant_idx, prev[0]);
             if (v > max_val && !in(relevant_idx, prev, n_prev)) {
-                // printf("argmax %f %i %i %i \n", v, i, j, n_prev);
                 max_idx.row = i;
                 max_idx.col = j;
                 max_val = v;
             }
         }
     }
-    // printf("out argmax %f %i %i %i \n", max_val, max_idx.row, max_idx.col, n_prev);
     return max_idx;
 }
 %endfor
@@ -62,7 +58,6 @@ WITHIN_KERNEL struct MatrixIndex argmax_abs_not_in_list_${matrix_dim}(GLOBAL_MEM
 {
     for (int sr_idx = 0; sr_idx < ${n_terms}; sr_idx++) {
         int buffer_ptr = uv_ptrs[uv_ptr0 + sr_idx];
-        // printf("buffer_ptr: %i k: %i n_terms: %i \n", buffer_ptr, sr_idx, ${n_terms});
 
         GLOBAL_MEM Real* U_term = &buffer[buffer_ptr];
         GLOBAL_MEM Real* V_term = &buffer[buffer_ptr + n_rows];
@@ -214,10 +209,11 @@ void aca_${name}(
     GLOBAL_MEM int* src_start, GLOBAL_MEM int* src_end,
     GLOBAL_MEM Real* p_tol,
     GLOBAL_MEM int* p_max_iter,
-    Real nu, int team_size)
+    Real nu)
 {
     int block_idx = get_group_id(0);
     int team_idx = get_local_id(0);
+    int team_size = get_local_size(0);
     int os = obs_start[block_idx];
     int oe = obs_end[block_idx];
     int n_obs = oe - os;

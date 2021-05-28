@@ -176,7 +176,6 @@ def call_clu_aca(
             gpu_tol,
             gpu_max_iter,
             float_type(nu),
-            np.int32(team_size),
             grid=(chunk_size, 1, 1),
             block=(team_size, 1, 1),
         )

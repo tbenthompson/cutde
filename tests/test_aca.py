@@ -27,7 +27,9 @@ def test_aca_fast(dtype, F_ordered, field):
     runner(dtype, F_ordered, field, 1, compare_against_py=False)
 
 
-def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=False):
+def runner(
+    dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark_iters=1
+):
     """
     This checks that the OpenCL/CUDA ACA implementation is producing *exactly*
     the same results as the prototype Python implementation and that both ACA
@@ -52,7 +54,9 @@ def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=
     set_sizes_edges[1:] = np.cumsum(set_sizes)
     for i in range(n_sets):
         S = set_sizes[i]
-        this_pts, this_tris, _ = setup_matrix_test(dtype, F_ordered, n_obs=S, n_src=S)
+        this_pts, this_tris, _ = setup_matrix_test(
+            dtype, F_ordered, n_obs=S, n_src=S, seed=i
+        )
         this_pts[:, 0] -= 150
         pts.append(this_pts)
         tris.append(this_tris)
@@ -73,9 +77,8 @@ def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=
     M1 = matrix_fnc(pts, tris, 0.25)
     M1 = M1.reshape((M1.shape[0] * M1.shape[1], M1.shape[2] * M1.shape[3]))
 
-    iters = 5 if benchmark else 1
     times = []
-    for i in range(iters):
+    for i in range(benchmark_iters):
         start = time.time()
         if compare_against_py:
             M2 = call_clu_aca(
@@ -106,7 +109,7 @@ def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=
             )
         times.append(time.time() - start)
 
-    if benchmark:
+    if benchmark_iters > 1:
         # ignore the first runtime since it includes compilation and CUDA initialization
         print("aca runtime, min=", np.min(times[1:]), "  median=", np.median(times[1:]))
 
@@ -137,8 +140,8 @@ def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=
 
         diff = block - U2.dot(V2)
         diff_frob = np.sqrt(np.sum(diff ** 2))
-        assert diff_frob < 5e-4
+        assert diff_frob < 1e-3
 
 
 if __name__ == "__main__":
-    runner(np.float32, False, "disp", 40, compare_against_py=False, benchmark=True)
+    runner(np.float32, False, "disp", 40, compare_against_py=False, benchmark_iters=2)
