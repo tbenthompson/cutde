@@ -49,15 +49,14 @@ def main():
             out = fnc()
             rt = time.time() - start
             pairs_per_sec = pairs / rt
-            print(pairs, "million took", rt, " -- ", pairs_per_sec, "pairs/sec")
+            print(pairs, "million took", rt, " -- ", pairs_per_sec, "million pairs/sec")
         return out
 
-    #
-    # print('profiling matrix')
-    # profile(lambda: cutde.strain_matrix(pts, tris, 0.25))
-    #
-    # print('profiling matrix free')
-    # profile(lambda: cutde.strain_free(pts, tris, slips, 0.25))
+    print("profiling matrix")
+    profile(lambda: cutde.strain_matrix(pts, tris, 0.25))
+
+    print("profiling matrix free")
+    profile(lambda: cutde.strain_free(pts, tris, slips, 0.25))
 
     print("profiling matrix vector product")
     disp_mat = cutde.disp_matrix(pts, tris, 0.25)

@@ -212,7 +212,9 @@ void aca_${name}(
     GLOBAL_MEM Real* obs_pts, GLOBAL_MEM Real* tris,
     GLOBAL_MEM int* obs_start, GLOBAL_MEM int* obs_end,
     GLOBAL_MEM int* src_start, GLOBAL_MEM int* src_end,
-    Real nu, Real tol, int p_max_iter, int team_size)
+    GLOBAL_MEM Real* p_tol,
+    GLOBAL_MEM int* p_max_iter,
+    Real nu, int team_size)
 {
     int block_idx = get_group_id(0);
     int team_idx = get_local_id(0);
@@ -256,7 +258,8 @@ void aca_${name}(
         team_idx, team_size
     );
 
-    int max_iter = min(p_max_iter, min(n_rows / 2, n_cols / 2));
+    int max_iter = min(p_max_iter[block_idx], min(n_rows / 2, n_cols / 2));
+    Real tol = p_tol[block_idx];
 
     // Some OpenCL implementations require LOCAL_MEM to be defined at the
     // outermost scope of a function. Otherwise this would be defined next to

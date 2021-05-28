@@ -30,7 +30,7 @@ def test_aca_fast(dtype, F_ordered, field):
 def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=False):
     """
     This checks that the OpenCL/CUDA ACA implementation is producing *exactly*
-    the same results as the Python implementation and that both ACA
+    the same results as the prototype Python implementation and that both ACA
     implementations are within the expected Frobenius norm tolerance of the
     exact calculation.
     """
@@ -86,15 +86,23 @@ def runner(dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark=
                 src_starts,
                 src_ends,
                 0.25,
-                1e-4,
-                200,
+                [1e-4] * len(obs_starts),
+                [200] * len(obs_starts),
                 field_spec,
                 Iref0=np.zeros_like(obs_starts),
                 Jref0=np.zeros_like(obs_starts),
             )
         else:
             M2 = aca_fnc(
-                pts, tris, obs_starts, obs_ends, src_starts, src_ends, 0.25, 1e-4, 200
+                pts,
+                tris,
+                obs_starts,
+                obs_ends,
+                src_starts,
+                src_ends,
+                0.25,
+                [1e-4] * len(obs_starts),
+                [200] * len(obs_starts),
             )
         times.append(time.time() - start)
 

@@ -28,6 +28,22 @@ def strain_aca(
     )
 
 
+def check_tol_max_iter(obs_start, tol, max_iter, float_type):
+
+    tol = np.array(tol)
+    if tol.shape[0] != obs_start.shape[0]:
+        raise ValueError("The length of tol must match obs_start.")
+
+    tol = np.ascontiguousarray(tol, dtype=float_type)
+
+    max_iter = np.array(max_iter)
+    if max_iter.shape[0] != obs_start.shape[0]:
+        raise ValueError("The length of max_iter must match obs_start.")
+
+    max_iter = np.ascontiguousarray(max_iter, dtype=np.int32)
+    return tol, max_iter
+
+
 def call_clu_aca(
     obs_pts,
     tris,
@@ -48,6 +64,7 @@ def call_clu_aca(
     obs_start, obs_end, src_start, src_end = process_block_inputs(
         obs_start, obs_end, src_start, src_end
     )
+    tol, max_iter = check_tol_max_iter(obs_start, tol, max_iter, float_type)
 
     default_chunk_size = 512
     team_size = 32
@@ -119,6 +136,8 @@ def call_clu_aca(
         gpu_obs_end = cluda.to_gpu(obs_end[chunk_start:chunk_end], np.int32)
         gpu_src_start = cluda.to_gpu(src_start[chunk_start:chunk_end], np.int32)
         gpu_src_end = cluda.to_gpu(src_end[chunk_start:chunk_end], np.int32)
+        gpu_tol = cluda.to_gpu(tol, float_type)
+        gpu_max_iter = cluda.to_gpu(max_iter, np.int32)
 
         if verbose:
             print(f"gpu_buffer.shape = {gpu_buffer.shape}")
@@ -154,9 +173,9 @@ def call_clu_aca(
             gpu_obs_end,
             gpu_src_start,
             gpu_src_end,
+            gpu_tol,
+            gpu_max_iter,
             float_type(nu),
-            float_type(tol),
-            np.int32(max_iter),
             np.int32(team_size),
             grid=(chunk_size, 1, 1),
             block=(team_size, 1, 1),
