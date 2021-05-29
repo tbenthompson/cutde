@@ -14,3 +14,4 @@ dependencies:
   - pre-commit
   - ipdb
   - pip
+  - mako

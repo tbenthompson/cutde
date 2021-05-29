@@ -10,9 +10,12 @@ void blocks_${name}(GLOBAL_MEM Real* results,
     GLOBAL_MEM int* obs_start, GLOBAL_MEM int* obs_end,
     GLOBAL_MEM int* src_start, GLOBAL_MEM int* src_end,
     GLOBAL_MEM int* block_start,
-    Real nu, Real tol)
+    Real nu)
 {
-    int block_idx = get_global_id(0);
+    int block_idx = get_group_id(0);
+    int team_id = get_local_id(0);
+    int team_size = get_local_size(0);
+
     int os = obs_start[block_idx];
     int oe = obs_end[block_idx];
     int n_obs = oe - os;
@@ -23,7 +26,7 @@ void blocks_${name}(GLOBAL_MEM Real* results,
 
     int bs = block_start[block_idx];
 
-    for (int i = os; i < oe; i++) {
+    for (int i = os + team_id; i < oe; i += team_size) {
         int obs_idx = i - os;
 
         Real3 obs;

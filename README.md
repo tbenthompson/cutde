@@ -1,5 +1,5 @@
 <p align=center>
-    <a target="_blank" href="https://www.python.org/downloads/" title="Python version"><img src="https://img.shields.io/badge/python-%3E=_3.6-green.svg"></a>
+    <a target="_blank" href="https://www.python.org/downloads/" title="Python version"><img src="https://img.shields.io/badge/python-%3E=_3.7-green.svg"></a>
     <a target="_blank" href="https://pypi.org/project/cutde/" title="PyPI version"><img src="https://img.shields.io/pypi/v/cutde?logo=pypi"></a>
     <!-- <a target="_blank" href="https://pypi.org/project/cutde/" title="PyPI"><img src="https://img.shields.io/pypi/dm/cutde"></a> -->
     <a target="_blank" href="LICENSE" title="License: MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
@@ -8,15 +8,23 @@
 
 # Python + CUDA TDEs from Nikkhoo and Walter 2015
 
-CUDA and OpenCL-enabled fullspace triangle dislocation elements. Benchmarked at 130 million TDEs per second. Based on the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software)
+CUDA and OpenCL-enabled fullspace triangle dislocation elements. Benchmarked at 130 million TDEs per second. Based on the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software). In addition to the basic pair-wise TDE operations for displacement and strain, `cutde` also has:
+* all pairs matrix construction functions.
+* matrix free functions for low memory usage settings.
+* block-wise functions that are especially helpful in an FMM or hierarchical matrix setting.
+* a CUDA adaptive cross approximation implementation for building hierarchical matrices.
 
-See below for usage and installation instructions.
+See below for basic usage and installation instructions. For more realistic usage examples, please check out [the TDE sequence in the BIE book](https://tbenthompson.com/book/tde_intro.html). You'll find examples of using all the above variants.
 
 <!--ts-->
    * [Python + CUDA TDEs from Nikkhoo and Walter 2015](#python--cuda-tdes-from-nikkhoo-and-walter-2015)
    * [Usage documentation](#usage-documentation)
+      * [Simple pair-wise TDEs](#simple-pair-wise-tdes)
       * [I want stress.](#i-want-stress)
-      * [All pairs](#all-pairs)
+      * [All pairs interactions matrix](#all-pairs-interactions-matrix)
+      * [Matrix-free all pairs interactions](#matrix-free-all-pairs-interactions)
+      * [Block-wise interaction matrices](#block-wise-interaction-matrices)
+      * [Adaptive cross approximation (ACA)](#adaptive-cross-approximation-aca)
    * [Installation](#installation)
       * [PyCUDA](#pycuda)
       * [Mac OS X](#mac-os-x)
@@ -27,7 +35,7 @@ See below for usage and installation instructions.
       * [Why can't I use Apple CPU OpenCL?](#why-cant-i-use-apple-cpu-opencl)
    * [Development](#development)
 
-<!-- Added by: tbent, at: Mon 05 Apr 2021 05:15:11 PM EDT -->
+<!-- Added by: tbent, at: Fri 28 May 2021 02:29:30 PM EDT -->
 
 <!--te-->
 
@@ -46,18 +54,23 @@ pts = np.array([obsx, obsy, 0 * obsy]).reshape((3, -1)).T.copy()
 fault_pts = np.array([[-1, 0, 0], [1, 0, 0], [1, 0, -1], [-1, 0, -1]])
 fault_tris = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
 
-#
-slip = np.array([[1, 0, 0], [1, 0, 0]])
+disp_mat = cutde.disp_matrix(obs_pts=pts, tris=fault_pts[fault_tris], nu=0.25)
 
-disp_mat = cutde.disp_all_pairs(
-    obs_pts=pts, tris=fault_pts[fault_tris], slips=slip, nu=0.25
-)
-disp = np.sum(disp_mat, axis=1).reshape((*obsx.shape, 3))
+slip = np.array([[1, 0, 0], [1, 0, 0]])
+disp = disp_mat.reshape((-1, 6)).dot(slip.flatten())
+
+disp_grid = disp.reshape((*obsx.shape, 3))
 
 plt.figure(figsize=(5, 5), dpi=300)
-cntf = plt.contourf(obsx, obsy, disp[:, :, 0], levels=21)
+cntf = plt.contourf(obsx, obsy, disp_grid[:, :, 0], levels=21)
 plt.contour(
-    obsx, obsy, disp[:, :, 0], colors="k", linestyles="-", linewidths=0.5, levels=21
+    obsx,
+    obsy,
+    disp_grid[:, :, 0],
+    colors="k",
+    linestyles="-",
+    linewidths=0.5,
+    levels=21,
 )
 plt.colorbar(cntf)
 plt.title("$u_x$")
@@ -69,18 +82,19 @@ plt.savefig("docs/example.png", bbox_inches="tight")
 ![docs/example.png](docs/example.png)
 
 # Usage documentation
+## Simple pair-wise TDEs
 
-Usage is really simple:
+Computing TDEs for observation point/source element pairs is really simple:
 
 ```
 import cutde
 
-disp = cutde.disp(pts, tris, slips, 0.25)
-strain = cutde.strain(pts, tris, slips, nu)
+disp = cutde.disp(obs_pts, src_tris, slips, nu)
+strain = cutde.strain(obs_pts, src_tris, slips, nu)
 ```
 
-* `pts` is a `np.array` with shape `(N, 3)`
-* tris is a `np.array` with shape `(N, 3, 3)` where the second dimension corresponds to each vertex and the third dimension corresponds to the cooordinates of those vertices.
+* `obs_pts` is a `np.array` with shape `(N, 3)`
+* `src_tris` is a `np.array` with shape `(N, 3, 3)` where the second dimension corresponds to each vertex and the third dimension corresponds to the cooordinates of those vertices.
 * slips is a `np.array` with shape `(N, 3)` where `slips[:,0]` is the strike slip component, while component 1 is the dip slip and component 2 is the tensile/opening component.
 * the last parameter, nu, is the Poisson ratio. 
 
@@ -99,25 +113,76 @@ stress = cutde.strain_to_stress(strain, sm, nu)
 
 to convert from stress to strain assuming isotropic linear elasticity. `sm` is the shear modulus and `nu` is the Poisson ratio.
 
-## All pairs
+## All pairs interactions matrix
 
 If, instead, you want to create a matrix representing the interaction between every observation point and every source triangle, there is a different interface:
 
 ```
 import cutde
 
-disp = cutde.disp_all_pairs(pts, tris, slips, 0.25)
-strain = cutde.strain_all_pairs(pts, tris, slips, nu)
+disp_mat = cutde.disp_matrix(obs_pts, src_tris, nu)
+strain_mat = cutde.strain_matrix(obs_pts, src_tris, nu)
 ```
 
-* `pts` is a `np.array` with shape `(N_OBS_PTS, 3)`
-* tris is a `np.array` with shape `(N_SRC_TRIS, 3, 3)` where the second dimension corresponds to each vertex and the third dimension corresponds to the cooordinates of those vertices.
-* slips is a `np.array` with shape `(N_SRC_TRIS, 3)` where `slips[:,0]` is the strike slip component, while component 1 is the dip slip and component 2 is the tensile/opening component.
+* `obs_pts` is a `np.array` with shape `(N_OBS_PTS, 3)`
+* `src_tris` is a `np.array` with shape `(N_SRC_TRIS, 3, 3)` where the second dimension corresponds to each vertex and the third dimension corresponds to the cooordinates of those vertices.
 * the last parameter, nu, is the Poisson ratio. 
-* The output `disp` is a `(N_OBS_PTS, N_SRC_TRIS, 3)` array.
-* The output `strain` is a `(N_OBS_PTS, N_SRC_TRIS, 6)` array.
+* The output `disp_mat` is a `(N_OBS_PTS, 3, N_SRC_TRIS, 3)` array. The second dimension corresponds to the components of the observed displacement while the fourth dimension corresponds to the component of the source slip vector. The slip vector components are ordered the same way as in `cutde.disp` and `cutde.strain`.
+* The output `strain_mat` is a `(N_OBS_PTS, 6, N_SRC_TRIS, 3)` array. Like above, the dimension corresponds to the components of the observation strain with the ordering identical to `cutde.strain`.
 
-Note that to use the `strain_to_stress` function, you'll need to reshape the output strain to be `(N_OBS_PTS * N_SRC_TRIS, 6)`.
+Note that to use the `strain_to_stress` function, you'll need to re-order the axes of the `strain` array. You can do this with `np.transpose(...)`.
+
+## Matrix-free all pairs interactions
+
+A common use of the matrices produced above by `cutde.disp_matrix` would be to perform matrix-vector products with a input vector with `(N_SRC_TRIS * 3)` entries and an output vector with `(N_OBS_PTS * 6)` entries. But, building the entire matrix can require a very large amount of memory. In some situations, it's useful to compute matrix-vector products without ever computing the matrix itself, a so-called "matrix-free" operation. In order to do this, the matrix entries are recomputed whenever they are needed. As a result, performing a matrix-vector product is much slower -- on my machine, about 20x slower. But, the trade-off may be worthwhile if you are memory-constrained.
+
+```
+disp = cutde.disp_free(obs_pts, src_tris, slips, nu)
+strain = cutde.strain_free(obs_pts, src_tris, slips, nu)
+```
+
+The parameters are the same as for `cutde.disp_matrix` with the addition of `slips`. The `slips` array is a `(N_SRC_TRIS, 3)` array containing the source slip vectors.
+
+## Block-wise interaction matrices
+
+In some settings, it is useful to compute many sub-blocks of a matrix without computing the full matrix. For example, this is useful for the nearfield component of a hierarchical matrix or fast multipole approximation (LINKS AND CITATIONS).
+
+```
+disp_matrices, block_idxs = cutde.disp_block(
+    obs_pts, src_tris, obs_start, obs_end, src_start, src_end, nu
+)
+strain_matrices, strain_block_idxs = cutde.strain_block(
+    obs_pts, src_tris, obs_start, obs_end, src_start, src_end, nu
+)
+```
+
+* `obs_pts`, `src_tris` and `nu` are the same as for `disp_matrix`.
+* `obs_starts` and `obs_end` are arrays with `N_BLOCKS` elements representing the first and last observation point indices in each block.
+* `src_starts` and `src_end` are arrays with `N_BLOCKS` elements representing the first and last source triangle indices in each block.
+
+The output `disp_matrices` and `strain_matrices` will be a densely packed representation with each block's boundaries demarcated by `block_idxs`. As an example of extracting a single block:
+```
+disp_matrices, block_idxs = cutde.disp_block(obs_pts, src_tris, [0, 5], [5, 10], [0, 2], [2, 4], nu)
+block1 = disp_matrices[block_idxs[0]:block_idxs[1]].reshape((5, 3, 2, 3))
+```
+
+## Adaptive cross approximation (ACA) 
+
+Sometimes the matrix blocks we want to compute represent far-field interactions where the observation points are all sufficiently far away and separated as a group from the source triangles. In this situation, the matrix blocks are approximately low rank. An approximate matrix will require much less storage space and allow for more efficient matrix-vector products. Adaptive cross approximation is an algorithm for computing such a low rank representation. (LINKS AND CITATIONS)
+
+```
+disp_appxs = cutde.disp_aca(
+    obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter
+)
+```
+
+The parameters are the same as `cutde.disp_block` with the addition of `tol` and `max_iter`. The tolerance, `tol`, is specified as an array of length `N_BLOCKS` in terms of the Frobenius norm of the error matrix between the true matrix and the approximation. The algorithm is not guaranteed to reach the specified tolerance but should come very close. The maximum number of iterations (equal to the maximum rank of the approximation) is also specified as an array of length `N_BLOCKS`.
+
+The output `disp_appxs` will be a list of `(U, V)` pairs representing the left and right vectors of the low rank approximation. To approximate a matrix vector product:
+```
+U, V = disp_appxs[0]
+y = U.dot(V.dot(x))
+```
 
 # Installation
 
@@ -175,12 +240,7 @@ The Apple OpenCL implementation for Intel CPUs has very poor support for the Ope
 For developing `cutde`, clone the repo and set up your conda environment based on the `environment.yml` with:
 
 ```
-git clone https://github.com/tbenthompson/cutde.git
-cd cutde
 conda env create
-conda activate cutde
-pre-commit install
-pip install --no-use-pep517 --disable-pip-version-check -e .
 ```
 
 Next, install either `pycuda` or `pyopencl` as instructed in the Installation section above.
@@ -208,4 +268,10 @@ The library is extremely simple:
 * `cutde.cuda` - the PyCUDA interface.
 * `cutde.opencl` - the PyOpenCL interface.
 
-The `tests/tde_profile.py` script is useful for assessing performance.
+The `tests/tde_profile.py` script is useful for assessing performance. 
+
+Some tests are marked as slow. To run these, run `pytest --runslow`. 
+
+If you have both CUDA and OpenCL installed, `cutde` will default to using CUDA. To use OpenCL instead, run `export CUTDE_USE_OPENCL=1` to set the environment flag before launching the Python session that will use `cutde`.
+
+The `README.md` is auto-generated from a template in `docs/`. To run this process, run `docs/build_docs`.

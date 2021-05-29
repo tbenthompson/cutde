@@ -1,5 +1,3 @@
-import logging
-import sys
 import time
 
 import numpy as np
@@ -7,24 +5,6 @@ import pytest
 import scipy.io
 
 import cutde
-
-
-def enable_logging():
-    root = logging.getLogger()
-    level = logging.INFO
-    # level = logging.DEBUG
-    root.setLevel(level)
-
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(level)
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    handler.setFormatter(formatter)
-    root.addHandler(handler)
-
-
-enable_logging()
 
 
 def get_pt_grid():
@@ -129,11 +109,8 @@ def test_cluda_simple():
     cluda_tde_tester(get_simple_test)
 
 
-def setup_matrix_test(dtype, F_ordered):
-    rand = np.random.RandomState(10)
-
-    n_obs = 10
-    n_src = 10
+def setup_matrix_test(dtype, F_ordered, n_obs=10, n_src=10, seed=10):
+    rand = np.random.RandomState(seed)
 
     def random_vals(shape, max_val):
         out = (rand.rand(*shape) * max_val).astype(dtype)
