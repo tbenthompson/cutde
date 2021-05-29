@@ -109,9 +109,7 @@ def runner(
             )
         times.append(time.time() - start)
 
-    if benchmark_iters > 1:
-        # ignore the first runtime since it includes compilation and CUDA initialization
-        print("aca runtime, min=", np.min(times[1:]), "  median=", np.median(times[1:]))
+    print("aca runtime, min=", np.min(times), "  median=", np.median(times))
 
     for block_idx in range(len(obs_starts)):
         os = obs_starts[block_idx]

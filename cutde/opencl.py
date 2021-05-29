@@ -1,4 +1,5 @@
 import logging
+import os
 import warnings
 
 import pyopencl
@@ -129,16 +130,9 @@ def compile(code):
 
     compile_options = []
 
-    # debug_opts = ["-g", "-Werror"]
-    # compile_options.extend(debug_opts)
-    fast_opts = [
-        # '-cl-finite-math-only',
-        "-cl-unsafe-math-optimizations",
-        # '-cl-no-signed-zeros',
-        "-cl-mad-enable",
-        # '-cl-strict-aliasing'
-    ]
-    compile_options.extend(fast_opts)
+    if "CUTDE_OPENCL_NO_OPTS" in os.environ:
+        logger.debug("compiling opencl without optimizations.")
+        compile_options.append("-cl-opt-disable")
 
     return ModuleWrapper(pyopencl.Program(gpu_ctx, code).build(options=compile_options))
 
