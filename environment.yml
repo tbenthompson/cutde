@@ -5,7 +5,7 @@ dependencies:
   - numpy
   - scipy
   - matplotlib
-  - proj
+  - pyproj
   - black
   - flake8
   - isort
@@ -15,5 +15,3 @@ dependencies:
   - ipdb
   - pip
   - mako
-  - pip:
-    - pyproj
