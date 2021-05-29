@@ -1,3 +1,5 @@
+import sys
+
 import numpy as np
 
 from cutde import compute_efcs_to_tdcs_rotations, compute_projection_transforms
@@ -14,6 +16,12 @@ def test_efcs_to_tdcs_orthogonal():
 
 
 def test_projection_transforms():
+    if sys.version_info.minor <= 7:
+        print(
+            "Skipping test_projection_transforms for Python <= 3.7"
+            " due to buggy conda packages."
+        )
+        return
     from pyproj import Transformer
 
     transformer = Transformer.from_crs(
