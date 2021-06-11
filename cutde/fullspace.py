@@ -1,5 +1,6 @@
 import os
 import warnings
+from math import ceil
 
 import numpy as np
 
@@ -186,27 +187,40 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
     n_obs = obs_pts.shape[0]
     n_src = tris.shape[0]
     block_size = 256
+
+    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
+    gpu_tris = cluda.to_gpu(tris, float_type)
+    gpu_slips = cluda.to_gpu(slips, float_type)
+    gpu_results = cluda.zeros_gpu(n_obs * vec_dim, float_type)
+
     n_obs_blocks = int(np.ceil(n_obs / block_size))
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
     module = cluda.load_gpu("free.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = cluda.zeros_gpu(n_obs * vec_dim, float_type)
-    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
-    gpu_tris = cluda.to_gpu(tris, float_type)
-    gpu_slips = cluda.to_gpu(slips, float_type)
+    # Split up the sources into chunks so that we don't completely overwhelm a
+    # single GPU machine and cause the screen to lock up.
+    default_chunk_size = 64
+    n_chunks = int(ceil(n_src / default_chunk_size))
+    out = np.zeros((n_obs, vec_dim), dtype=float_type)
+    for i in range(n_chunks):
+        chunk_start = i * default_chunk_size
+        chunk_size = min(n_src - chunk_start, default_chunk_size)
+        chunk_end = chunk_start + chunk_size
 
-    getattr(module, "free_" + fnc_name)(
-        gpu_results,
-        np.int32(n_obs),
-        np.int32(n_src),
-        gpu_obs_pts,
-        gpu_tris,
-        gpu_slips,
-        float_type(nu),
-        grid=(n_obs_blocks, 1, 1),
-        block=(block_size, 1, 1),
-    )
-    out = gpu_results.get().reshape((n_obs, vec_dim))
+        getattr(module, "free_" + fnc_name)(
+            gpu_results,
+            np.int32(n_obs),
+            np.int32(n_src),
+            np.int32(chunk_start),
+            np.int32(chunk_end),
+            gpu_obs_pts,
+            gpu_tris,
+            gpu_slips,
+            float_type(nu),
+            grid=(n_obs_blocks, 1, 1),
+            block=(block_size, 1, 1),
+        )
+        out += gpu_results.get().reshape((n_obs, vec_dim))
     return out
 
 
