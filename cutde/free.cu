@@ -6,7 +6,7 @@ ${common.defs()}
 <%def name="tde_free(name, evaluator, vec_dim)">
 KERNEL
 void free_${name}(GLOBAL_MEM Real* results, 
-    int n_obs, int n_src,
+    int n_obs, int n_src, int src_start, int src_end,
     GLOBAL_MEM Real* obs_pts, GLOBAL_MEM Real* tris,
     GLOBAL_MEM Real* slips,
     Real nu)
@@ -31,9 +31,12 @@ void free_${name}(GLOBAL_MEM Real* results,
     % endfor
     LOCAL_MEM Real3 sh_slips[${block_size}];
 
-    for (int block_start = 0; block_start < n_src; block_start += ${block_size}) {
+    // NOTE: The blocking scheme set up here seems to be irrelevant because the
+    // runtime is totally dominated by the floating point operations inside the
+    // TDE evaluation.
+    for (int block_start = src_start; block_start < src_end; block_start += ${block_size}) {
         int j = block_start + group_id;
-        if (j < n_src) {
+        if (j < src_end) {
             % for d1 in range(3):
                 % for d2 in range(3):
                     sh_tri${d1}[group_id].${comp(d2)} = tris[j * 9 + ${d1} * 3 + ${d2}];
@@ -45,7 +48,7 @@ void free_${name}(GLOBAL_MEM Real* results,
         LOCAL_BARRIER;
 
         if (i < n_obs) {
-            int block_end = min(n_src, block_start + ${block_size});
+            int block_end = min(src_end, block_start + ${block_size});
             int block_length = block_end - block_start;
             for (int block_idx = 0; block_idx < block_length; block_idx++) {
                 % for d1 in range(3):
