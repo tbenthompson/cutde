@@ -191,6 +191,7 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
     gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
     gpu_tris = cluda.to_gpu(tris, float_type)
     gpu_slips = cluda.to_gpu(slips, float_type)
+    gpu_results = cluda.zeros_gpu(n_obs * vec_dim, float_type)
 
     n_obs_blocks = int(np.ceil(n_obs / block_size))
     gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
@@ -198,7 +199,7 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
 
     # Split up the sources into chunks so that we don't completely overwhelm a
     # single GPU machine and cause the screen to lock up.
-    default_chunk_size = 128
+    default_chunk_size = 64
     n_chunks = int(ceil(n_src / default_chunk_size))
     out = np.zeros((n_obs, vec_dim), dtype=float_type)
     for i in range(n_chunks):
@@ -206,7 +207,6 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
         chunk_size = min(n_src - chunk_start, default_chunk_size)
         chunk_end = chunk_start + chunk_size
 
-        gpu_results = cluda.zeros_gpu(n_obs * vec_dim, float_type)
         getattr(module, "free_" + fnc_name)(
             gpu_results,
             np.int32(n_obs),
