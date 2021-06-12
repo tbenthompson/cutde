@@ -33,7 +33,7 @@ def solve_types(obs_pts, tris, slips):
     float_type = None
     out_arrs = []
     for name, arr in [("obs_pts", obs_pts), ("tris", tris), ("slips", slips)]:
-        if arr is placeholder:
+        if isinstance(arr, Placeholder):
             out_arrs.append(arr)
             continue
 
@@ -102,12 +102,12 @@ def check_inputs(obs_pts, tris, slips):
             "The third dimension of the tris array must be 3 because the triangle "
             "vertices should be locations in three-dimensional space."
         )
-    if slips is not placeholder and (slips.shape[0] != tris.shape[0]):
+    if not isinstance(slips, Placeholder) and (slips.shape[0] != tris.shape[0]):
         raise ValueError(
             "The number of input slip vectors must be equal to the number of input"
             " triangles."
         )
-    if slips is not placeholder and (slips.shape[1] != 3):
+    if not isinstance(slips, Placeholder) and (slips.shape[1] != 3):
         raise ValueError(
             "The second dimension of the slips array must be 3 because each row "
             "should be a vector in the TDE coordinate system (strike-slip, dip-slip,"

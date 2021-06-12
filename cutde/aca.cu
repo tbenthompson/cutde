@@ -106,8 +106,6 @@ void calc_${matrix_dim}_${name}(
     * But, we specify the element in terms of the rowcol_start and rowcol_end.
     * This allows grabbing just a subset of the rows when that is desirable.
     */
-    int n_src = se - ss;
-
     % if matrix_dim == "rows":
 
     int block_i = floor(((float)rowcol_start) / ${vec_dim});
@@ -123,7 +121,7 @@ void calc_${matrix_dim}_${name}(
 
     int src_dim_start = 0;
     int src_dim_end = 3;
-    int n_output_src = n_src;
+    int n_output_src = se - ss;
     for (int j = ss + team_idx; j < se; j += team_size) {
         int src_idx = j - ss;
 
