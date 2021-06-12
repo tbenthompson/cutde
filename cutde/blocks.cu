@@ -18,7 +18,6 @@ void blocks_${name}(GLOBAL_MEM Real* results,
 
     int os = obs_start[block_idx];
     int oe = obs_end[block_idx];
-    int n_obs = oe - os;
 
     int ss = src_start[block_idx];
     int se = src_end[block_idx];
