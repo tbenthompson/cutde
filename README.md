@@ -35,7 +35,7 @@ See below for basic usage and installation instructions. For more realistic usag
       * [Why can't I use Apple CPU OpenCL?](#why-cant-i-use-apple-cpu-opencl)
    * [Development](#development)
 
-<!-- Added by: tbent, at: Fri 28 May 2021 02:29:30 PM EDT -->
+<!-- Added by: tbent, at: Mon 14 Jun 2021 02:16:49 PM EDT -->
 
 <!--te-->
 
@@ -145,7 +145,7 @@ The parameters are the same as for `cutde.disp_matrix` with the addition of `sli
 
 ## Block-wise interaction matrices
 
-In some settings, it is useful to compute many sub-blocks of a matrix without computing the full matrix. For example, this is useful for the nearfield component of a hierarchical matrix or fast multipole approximation (LINKS AND CITATIONS).
+In some settings, it is useful to compute many sub-blocks of a matrix without computing the full matrix. For example, this is useful for the nearfield component of a hierarchical matrix or fast multipole approximation.
 
 ```
 disp_matrices, block_idxs = cutde.disp_block(
@@ -168,7 +168,7 @@ block1 = disp_matrices[block_idxs[0]:block_idxs[1]].reshape((5, 3, 2, 3))
 
 ## Adaptive cross approximation (ACA) 
 
-Sometimes the matrix blocks we want to compute represent far-field interactions where the observation points are all sufficiently far away and separated as a group from the source triangles. In this situation, the matrix blocks are approximately low rank. An approximate matrix will require much less storage space and allow for more efficient matrix-vector products. Adaptive cross approximation is an algorithm for computing such a low rank representation. (LINKS AND CITATIONS)
+Sometimes the matrix blocks we want to compute represent far-field interactions where the observation points are all sufficiently far away and separated as a group from the source triangles. In this situation, the matrix blocks are approximately low rank. An approximate matrix will require much less storage space and allow for more efficient matrix-vector products. Adaptive cross approximation is an algorithm for computing such a low rank representation. See [Grasedyck 2005](https://link.springer.com/content/pdf/10.1007/s00607-004-0103-1.pdf) for an accessible and general introduction to ACA. Or, see the [ACA section here](https://tbenthompson.com/book/tdes/low_rank.html) for an introduction that [builds up to using the `cutde.disp_aca` implementation](https://tbenthompson.com/book/tdes/hmatrix.html).
 
 ```
 disp_appxs = cutde.disp_aca(
