@@ -2,7 +2,7 @@ import sys
 
 import numpy as np
 
-from cutde import compute_efcs_to_tdcs_rotations, compute_projection_transforms
+from cutde.geometry import compute_efcs_to_tdcs_rotations, compute_projection_transforms
 
 
 def test_efcs_to_tdcs_orthogonal():

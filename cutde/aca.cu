@@ -169,9 +169,7 @@ void calc_${matrix_dim}_${name}(
                 slip.x = 1.0;
             }
 
-            ${common.setup_tde()}
-
-            ${evaluator()}
+            ${evaluator("tri")}
 
             %for d_obs in range(vec_dim):
             {
@@ -455,5 +453,5 @@ void aca_${name}(
 }
 </%def>
 
-${aca("disp", common.disp, 3)}
-${aca("strain", common.strain, 6)}
+${aca("disp_fs", common.disp_fs, 3)}
+${aca("strain_fs", common.strain_fs, 6)}

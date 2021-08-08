@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 import scipy.io
 
-import cutde
+import cutde.fullspace as FS
+import cutde.halfspace as HS
 
 
 def get_pt_grid():
@@ -31,6 +32,13 @@ def get_complex_test():
     return correct, get_pt_grid(), tri, slip
 
 
+def get_halfspace_test():
+    correct = scipy.io.loadmat("tests/result_halfspace.mat")
+    tri = np.array([[0, 0.1, -0.1], [1, -0.2, -0.2], [1, 1, -0.3]])
+    slip = [1.3, 1.4, 1.5]
+    return correct, get_pt_grid(), tri, slip
+
+
 def py_tde_tester(setup_fnc, N_test=-1):
     correct, test_pts, tri, slip = setup_fnc()
 
@@ -41,7 +49,7 @@ def py_tde_tester(setup_fnc, N_test=-1):
     start = time.time()
     for i in range(N_test):
         pt = test_pts[i, :]
-        results[i, :] = cutde.py_disp(pt, tri, slip, 0.25)
+        results[i, :] = FS.py_disp(pt, tri, slip, 0.25)
         np.testing.assert_almost_equal(results[i, 0], correct["UEf"][i, 0])
         np.testing.assert_almost_equal(results[i, 1], correct["UNf"][i, 0])
         np.testing.assert_almost_equal(results[i, 2], correct["UVf"][i, 0])
@@ -83,9 +91,9 @@ def cluda_tde_tester(setup_fnc, N_test=None):
     tris = np.array([tri] * N_test, dtype=np.float64)
     slips = np.array([slip] * N_test)
 
-    disp = cutde.disp(test_pts[:N_test], tris, slips, 0.25)
-    strain = cutde.strain(test_pts[:N_test], tris, slips, nu)
-    stress = cutde.strain_to_stress(strain, sm, nu)
+    disp = FS.disp(test_pts[:N_test], tris, slips, nu)
+    strain = FS.strain(test_pts[:N_test], tris, slips, nu)
+    stress = FS.strain_to_stress(strain, sm, nu)
 
     np.testing.assert_almost_equal(disp[:, 0], correct["UEf"][:N_test, 0])
     np.testing.assert_almost_equal(disp[:, 1], correct["UNf"][:N_test, 0])
@@ -96,7 +104,7 @@ def cluda_tde_tester(setup_fnc, N_test=None):
     test_ptsF = np.asfortranarray(test_pts[:N_test])
     trisF = np.asfortranarray(tris)
     slipsF = np.asfortranarray(slips)
-    dispF = cutde.disp(test_ptsF, trisF, slipsF, 0.25)
+    dispF = FS.disp(test_ptsF, trisF, slipsF, 0.25)
     np.testing.assert_almost_equal(disp, dispF)
 
 
@@ -107,6 +115,33 @@ def test_cluda_simple_reduced():
 @pytest.mark.slow
 def test_cluda_simple():
     cluda_tde_tester(get_simple_test)
+
+
+def test_halfspace():
+    correct, test_pts, tri, slip = get_halfspace_test()
+    N_test = 1
+
+    if N_test is None:
+        N_test = correct["UEf"].shape[0]
+
+    tris = np.array([tri] * N_test, dtype=np.float64)
+    slips = np.array([slip] * N_test)
+
+    disp = HS.disp(test_pts[:N_test], tris, slips, 0.25)
+    # strain = HS.strain(test_pts[:N_test], tris, slips, nu)
+    # stress = HS.strain_to_stress(strain, sm, nu)
+
+    np.testing.assert_almost_equal(disp[:, 0], correct["UEf"][:N_test, 0])
+    np.testing.assert_almost_equal(disp[:, 1], correct["UNf"][:N_test, 0])
+    np.testing.assert_almost_equal(disp[:, 2], correct["UVf"][:N_test, 0])
+    # np.testing.assert_almost_equal(strain, correct["Strain"][:N_test])
+    # np.testing.assert_almost_equal(stress, correct["Stress"][:N_test])
+
+    # test_ptsF = np.asfortranarray(test_pts[:N_test])
+    # trisF = np.asfortranarray(tris)
+    # slipsF = np.asfortranarray(slips)
+    # dispF = FS.disp(test_ptsF, trisF, slipsF, 0.25)
+    # np.testing.assert_almost_equal(disp, dispF)
 
 
 def setup_matrix_test(dtype, F_ordered, n_obs=10, n_src=10, seed=10):
@@ -130,11 +165,11 @@ def test_matrix(dtype, F_ordered, field):
     pts, tris, slips = setup_matrix_test(dtype, F_ordered)
 
     if field == "disp":
-        simple_fnc = cutde.disp
-        matrix_fnc = cutde.disp_matrix
+        simple_fnc = FS.disp
+        matrix_fnc = FS.disp_matrix
     else:
-        simple_fnc = cutde.strain
-        matrix_fnc = cutde.strain_matrix
+        simple_fnc = FS.strain
+        matrix_fnc = FS.strain_matrix
 
     mat1 = []
     slips[:] = 1
@@ -160,11 +195,11 @@ def test_matrix_free(dtype, F_ordered, field):
     pts, tris, slips = setup_matrix_test(dtype, F_ordered)
 
     if field == "disp":
-        matrix_fnc = cutde.disp_matrix
-        free_fnc = cutde.disp_free
+        matrix_fnc = FS.disp_matrix
+        free_fnc = FS.disp_free
     else:
-        matrix_fnc = cutde.strain_matrix
-        free_fnc = cutde.strain_free
+        matrix_fnc = FS.strain_matrix
+        free_fnc = FS.strain_free
 
     S1 = matrix_fnc(pts, tris, 0.25).reshape((-1, slips.size)).dot(slips.flatten())
     S2 = free_fnc(pts, tris, slips, 0.25).flatten()
@@ -184,11 +219,11 @@ def test_block(dtype, F_ordered, field):
     pts, tris, slips = setup_matrix_test(dtype, F_ordered)
 
     if field == "disp":
-        matrix_fnc = cutde.disp_matrix
-        block_fnc = cutde.disp_block
+        matrix_fnc = FS.disp_matrix
+        block_fnc = FS.disp_block
     else:
-        matrix_fnc = cutde.strain_matrix
-        block_fnc = cutde.strain_block
+        matrix_fnc = FS.strain_matrix
+        block_fnc = FS.strain_block
 
     M1 = matrix_fnc(pts, tris, 0.25)
 

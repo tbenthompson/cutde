@@ -57,9 +57,7 @@ void free_${name}(GLOBAL_MEM Real* results,
 
                 Real3 slip = sh_slips[block_idx];
 
-                ${common.setup_tde()}
-
-                ${evaluator()}
+                ${evaluator("tri")}
 
                 %for d_obs in range(vec_dim):
                 {
@@ -82,5 +80,5 @@ void free_${name}(GLOBAL_MEM Real* results,
 }
 </%def>
 
-${tde_free("disp", common.disp, 3)}
-${tde_free("strain", common.strain, 6)}
+${tde_free("disp_fs", common.disp_fs, 3)}
+${tde_free("strain_fs", common.strain_fs, 6)}

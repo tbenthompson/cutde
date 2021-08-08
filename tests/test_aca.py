@@ -5,9 +5,9 @@ import py_aca
 import pytest
 from test_tde import setup_matrix_test
 
-import cutde
+import cutde.fullspace as FS
 from cutde.aca import call_clu_aca
-from cutde.fullspace import DISP, STRAIN
+from cutde.coordinators import DISP_FS, STRAIN_FS
 
 
 @pytest.mark.slow
@@ -37,14 +37,14 @@ def runner(
     exact calculation.
     """
     if field == "disp":
-        matrix_fnc = cutde.disp_matrix
-        aca_fnc = cutde.disp_aca
-        field_spec = DISP
+        matrix_fnc = FS.disp_matrix
+        aca_fnc = FS.disp_aca
+        field_spec = DISP_FS
         vec_dim = 3
     else:
-        matrix_fnc = cutde.strain_matrix
-        aca_fnc = cutde.strain_aca
-        field_spec = STRAIN
+        matrix_fnc = FS.strain_matrix
+        aca_fnc = FS.strain_aca
+        field_spec = STRAIN_FS
         vec_dim = 6
 
     pts = []

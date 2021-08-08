@@ -23,7 +23,15 @@ WITHIN_KERNEL Real${dim} ${name}${dim}(Real${dim} a, ${b_type} b) {
 
 ${cluda_preamble}
 
+<%
+import numpy as np
+%>
 #define Real ${float_type}
+% if float_type == 'double':
+#define EPS ${np.finfo(np.float64).eps}
+% else:
+#define EPS ${np.finfo(np.float32).eps}
+% endif
 
 #ifndef M_PI
   #define M_PI   3.14159265358979323846264338327950288
@@ -372,10 +380,130 @@ WITHIN_KERNEL Real6 TDSetupS(Real3 obs, Real alpha, Real3 slip, Real nu,
     return tensor_transform3(B0, B1, B2, out_adcs);
 }
 
+WITHIN_KERNEL Real3 AngDisDispFSC(Real y1, Real y2, Real y3, Real beta, 
+                                  Real b1, Real b2, Real b3, Real nu, Real a) {
 
-</%def>
+    Real sinB = sin(beta);
+    Real cosB = cos(beta);
+    Real cotB = 1.0/tan(beta);
+    Real y3b = y3+2*a;
+    Real z1b = y1*cosB+y3b*sinB;
+    Real z3b = -y1*sinB+y3b*cosB;
+    Real r2b = y1*y1+y2*y2+y3b*y3b;
+    Real rb = sqrt(r2b);
 
-<%def name="disp()">
+    Real Fib = 2*atan(-y2/(-(rb+y3b)*(1.0 / tan(beta/2))+y1)); // The Burgers' function
+
+    Real v1cb1 = b1/4/M_PI/(1-nu)*(-2*(1-nu)*(1-2*nu)*Fib*(cotB*cotB)+(1-2*nu)*y2/
+        (rb+y3b)*((1-2*nu-a/rb)*cotB-y1/(rb+y3b)*(nu+a/rb))+(1-2*nu)*
+        y2*cosB*cotB/(rb+z3b)*(cosB+a/rb)+a*y2*(y3b-a)*cotB/(rb*rb*rb)+y2*
+        (y3b-a)/(rb*(rb+y3b))*(-(1-2*nu)*cotB+y1/(rb+y3b)*(2*nu+a/rb)+
+        a*y1/(rb*rb))+y2*(y3b-a)/(rb*(rb+z3b))*(cosB/(rb+z3b)*((rb*
+        cosB+y3b)*((1-2*nu)*cosB-a/rb)*cotB+2*(1-nu)*(rb*sinB-y1)*cosB)-
+        a*y3b*cosB*cotB/(rb*rb)));
+
+    Real v2cb1 = b1/4/M_PI/(1-nu)*((1-2*nu)*((2*(1-nu)*(cotB*cotB)-nu)*log(rb+y3b)-(2*
+        (1-nu)*(cotB*cotB)+1-2*nu)*cosB*log(rb+z3b))-(1-2*nu)/(rb+y3b)*(y1*
+        cotB*(1-2*nu-a/rb)+nu*y3b-a+(y2*y2)/(rb+y3b)*(nu+a/rb))-(1-2*
+        nu)*z1b*cotB/(rb+z3b)*(cosB+a/rb)-a*y1*(y3b-a)*cotB/(rb*rb*rb)+
+        (y3b-a)/(rb+y3b)*(-2*nu+1/rb*((1-2*nu)*y1*cotB-a)+(y2*y2)/(rb*
+        (rb+y3b))*(2*nu+a/rb)+a*(y2*y2)/(rb*rb*rb))+(y3b-a)/(rb+z3b)*((cosB*cosB)-
+        1/rb*((1-2*nu)*z1b*cotB+a*cosB)+a*y3b*z1b*cotB/(rb*rb*rb)-1/(rb*
+        (rb+z3b))*((y2*y2)*(cosB*cosB)-a*z1b*cotB/rb*(rb*cosB+y3b))));
+
+    Real v3cb1 = b1/4/M_PI/(1-nu)*(2*(1-nu)*(((1-2*nu)*Fib*cotB)+(y2/(rb+y3b)*(2*
+        nu+a/rb))-(y2*cosB/(rb+z3b)*(cosB+a/rb)))+y2*(y3b-a)/rb*(2*
+        nu/(rb+y3b)+a/(rb*rb))+y2*(y3b-a)*cosB/(rb*(rb+z3b))*(1-2*nu-
+        (rb*cosB+y3b)/(rb+z3b)*(cosB+a/rb)-a*y3b/(rb*rb)));
+
+    Real v1cb2 = b2/4/M_PI/(1-nu)*((1-2*nu)*((2*(1-nu)*(cotB*cotB)+nu)*log(rb+y3b)-(2*
+        (1-nu)*(cotB*cotB)+1)*cosB*log(rb+z3b))+(1-2*nu)/(rb+y3b)*(-(1-2*nu)*
+        y1*cotB+nu*y3b-a+a*y1*cotB/rb+(y1*y1)/(rb+y3b)*(nu+a/rb))-(1-2*
+        nu)*cotB/(rb+z3b)*(z1b*cosB-a*(rb*sinB-y1)/(rb*cosB))-a*y1*
+        (y3b-a)*cotB/(rb*rb*rb)+(y3b-a)/(rb+y3b)*(2*nu+1/rb*((1-2*nu)*y1*
+        cotB+a)-(y1*y1)/(rb*(rb+y3b))*(2*nu+a/rb)-a*(y1*y1)/(rb*rb*rb))+(y3b-a)*
+        cotB/(rb+z3b)*(-cosB*sinB+a*y1*y3b/((rb*rb*rb)*cosB)+(rb*sinB-y1)/
+        rb*(2*(1-nu)*cosB-(rb*cosB+y3b)/(rb+z3b)*(1+a/(rb*cosB)))));
+                    
+    Real v2cb2 = b2/4/M_PI/(1-nu)*(2*(1-nu)*(1-2*nu)*Fib*(cotB*cotB)+(1-2*nu)*y2/
+        (rb+y3b)*(-(1-2*nu-a/rb)*cotB+y1/(rb+y3b)*(nu+a/rb))-(1-2*nu)*
+        y2*cotB/(rb+z3b)*(1+a/(rb*cosB))-a*y2*(y3b-a)*cotB/(rb*rb*rb)+y2*
+        (y3b-a)/(rb*(rb+y3b))*((1-2*nu)*cotB-2*nu*y1/(rb+y3b)-a*y1/rb*
+        (1/rb+1/(rb+y3b)))+y2*(y3b-a)*cotB/(rb*(rb+z3b))*(-2*(1-nu)*
+        cosB+(rb*cosB+y3b)/(rb+z3b)*(1+a/(rb*cosB))+a*y3b/((rb*rb)*cosB)));
+                    
+    Real v3cb2 = b2/4/M_PI/(1-nu)*(-2*(1-nu)*(1-2*nu)*cotB*(log(rb+y3b)-cosB*
+        log(rb+z3b))-2*(1-nu)*y1/(rb+y3b)*(2*nu+a/rb)+2*(1-nu)*z1b/(rb+
+        z3b)*(cosB+a/rb)+(y3b-a)/rb*((1-2*nu)*cotB-2*nu*y1/(rb+y3b)-a*
+        y1/(rb*rb))-(y3b-a)/(rb+z3b)*(cosB*sinB+(rb*cosB+y3b)*cotB/rb*
+        (2*(1-nu)*cosB-(rb*cosB+y3b)/(rb+z3b))+a/rb*(sinB-y3b*z1b/
+        (rb*rb)-z1b*(rb*cosB+y3b)/(rb*(rb+z3b)))));
+
+    Real v1cb3 = b3/4/M_PI/(1-nu)*((1-2*nu)*(y2/(rb+y3b)*(1+a/rb)-y2*cosB/(rb+
+        z3b)*(cosB+a/rb))-y2*(y3b-a)/rb*(a/(rb*rb)+1/(rb+y3b))+y2*
+        (y3b-a)*cosB/(rb*(rb+z3b))*((rb*cosB+y3b)/(rb+z3b)*(cosB+a/
+        rb)+a*y3b/(rb*rb)));
+                    
+    Real v2cb3 = b3/4/M_PI/(1-nu)*((1-2*nu)*(-sinB*log(rb+z3b)-y1/(rb+y3b)*(1+a/
+        rb)+z1b/(rb+z3b)*(cosB+a/rb))+y1*(y3b-a)/rb*(a/(rb*rb)+1/(rb+
+        y3b))-(y3b-a)/(rb+z3b)*(sinB*(cosB-a/rb)+z1b/rb*(1+a*y3b/
+        (rb*rb))-1/(rb*(rb+z3b))*((y2*y2)*cosB*sinB-a*z1b/rb*(rb*cosB+y3b))));
+                    
+    Real v3cb3 = b3/4/M_PI/(1-nu)*(2*(1-nu)*Fib+2*(1-nu)*(y2*sinB/(rb+z3b)*(cosB+
+        a/rb))+y2*(y3b-a)*sinB/(rb*(rb+z3b))*(1+(rb*cosB+y3b)/(rb+
+        z3b)*(cosB+a/rb)+a*y3b/(rb*rb)));
+
+    return make3(
+        v1cb1+v1cb2+v1cb3,
+        v2cb1+v2cb2+v2cb3,
+        v3cb1+v3cb2+v3cb3
+    );
+}
+
+WITHIN_KERNEL Real3 AngSetupFSC(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Real nu) {
+    Real3 SideVec = sub3(PB, PA);
+    Real3 eZ = make3(0.0f,0.0f,1.0f);
+    Real beta = acos(dot3(normalize3(SideVec), eZ));
+    if (abs(beta) < EPS || abs(M_PI-beta) < EPS) {
+        return make3(0.0f, 0.0f, 0.0f);
+    }
+    Real3 ey1 = SideVec;
+    ey1.z = 0;
+    Real3 ey3 = negate3(eZ);
+    Real3 ey2 = cross3(ey3, ey1);
+
+    Real3 yA = transform3(ey1, ey2, ey3, sub3(obs, PA));
+    Real3 yAB = transform3(ey1, ey2, ey3, SideVec);;
+    Real3 yB = sub3(yA, yAB);
+
+    Real3 slip_adcs = transform3(ey1, ey2, ey3, slip);
+
+    Real configuration = beta;
+    if (beta*yA.x >= 0) {
+        configuration -= M_PI;
+    }
+
+    Real3 vA = AngDisDispFSC(
+        yA.x, yA.y, yA.z, beta,
+        slip_adcs.x, slip_adcs.y, slip_adcs.z, 
+        nu, -PA.z
+    );
+    Real3 vB = AngDisDispFSC(
+        yB.x, yB.y, yB.z, beta,
+        slip_adcs.x, slip_adcs.y, slip_adcs.z, 
+        nu, -PB.z
+    );
+
+    Real3 v = sub3(vB, vA);
+    return inv_transform3(ey1, ey2, ey3, v);
+}
+
+
+</%def> //END OF defs()
+
+<%def name="disp_fs(tri_prefix, is_halfspace='false')">
+    ${setup_tde(tri_prefix, is_halfspace)}
+
     Real3 out;
     if (mode == 1) {
         // Calculate first angular dislocation contribution
@@ -425,7 +553,9 @@ WITHIN_KERNEL Real6 TDSetupS(Real3 obs, Real alpha, Real3 slip, Real nu,
     Real3 final = inv_transform3(Vnorm, Vstrike, Vdip, out);
 </%def>
 
-<%def name="strain()">
+<%def name="strain_fs(tri_prefix)">
+    ${setup_tde(tri_prefix, "false")}
+
     Real6 out;
     if (mode == 1) {
         // Calculate first angular dislocation contribution
@@ -451,21 +581,37 @@ WITHIN_KERNEL Real6 TDSetupS(Real3 obs, Real alpha, Real3 slip, Real nu,
     Real6 final = tensor_transform3(Vnorm, Vstrike, Vdip, out);
 </%def>
 
-<%def name="setup_tde()">
-    Real3 Vnorm = normalize3(cross3(sub3(tri1, tri0), sub3(tri2, tri0)));
+<%def name="setup_tde(tri_prefix, is_halfspace)">
+    Real3 Vnorm = normalize3(cross3(
+        sub3(${tri_prefix}1, ${tri_prefix}0),
+        sub3(${tri_prefix}2, ${tri_prefix}0)
+    ));
     Real3 eY = make3(0.0f, 1.0f, 0.0f);
     Real3 eZ = make3(0.0f,0.0f,1.0f);
     Real3 Vstrike = cross3(eZ, Vnorm);
     if (length3(Vstrike) == 0) {
-         Vstrike = mul_scalar3(eY, Vnorm.z);
+        Vstrike = mul_scalar3(eY, Vnorm.z);
+        % if is_halfspace:
+            // For horizontal elements in case of half-space calculation!!!
+            // Correct the strike vector of image dislocation only
+            if (${tri_prefix}0.z > 0) {
+                Vstrike = negate3(Vstrike);
+            }
+        % endif
     }
     Vstrike = normalize3(Vstrike); 
     Real3 Vdip = cross3(Vnorm, Vstrike);
 
-    Real3 transformed_obs = transform3(Vnorm, Vstrike, Vdip, sub3(obs, tri1));
-    Real3 transformed_tri0 = transform3(Vnorm, Vstrike, Vdip, sub3(tri0, tri1));
+    Real3 transformed_obs = transform3(
+        Vnorm, Vstrike, Vdip, sub3(obs, ${tri_prefix}1)
+    );
+    Real3 transformed_tri0 = transform3(
+        Vnorm, Vstrike, Vdip, sub3(${tri_prefix}0, ${tri_prefix}1)
+    );
     Real3 transformed_tri1 = make3(0.0f, 0.0f, 0.0f);
-    Real3 transformed_tri2 = transform3(Vnorm, Vstrike, Vdip, sub3(tri2, tri1));
+    Real3 transformed_tri2 = transform3(
+        Vnorm, Vstrike, Vdip, sub3(${tri_prefix}2, ${tri_prefix}1)
+    );
 
     Real3 e12 = normalize3(sub3(transformed_tri1, transformed_tri0));
     Real3 e13 = normalize3(sub3(transformed_tri2, transformed_tri0));
@@ -481,3 +627,37 @@ WITHIN_KERNEL Real6 TDSetupS(Real3 obs, Real alpha, Real3 slip, Real nu,
     );
 </%def>
 
+<%def name="disp_hs(tri_prefix)">
+    Real3 final;
+    {
+        ${disp_fs(tri_prefix)}
+
+        final.x = out.x;
+        final.y = out.y;
+        final.z = out.z;
+
+        Real3 efcs_slip = transform3(Vnorm, Vstrike, Vdip, slip);
+        Real3 uvw0 = AngSetupFSC(obs, efcs_slip, ${tri_prefix}0, ${tri_prefix}1, nu);
+        Real3 uvw1 = AngSetupFSC(obs, efcs_slip, ${tri_prefix}1, ${tri_prefix}2, nu);
+        Real3 uvw2 = AngSetupFSC(obs, efcs_slip, ${tri_prefix}2, ${tri_prefix}0, nu);
+
+        final.x += uvw0.x + uvw1.x + uvw2.x;
+        final.y += uvw0.y + uvw1.y + uvw2.y;
+        final.z += uvw0.z + uvw1.z + uvw2.z;
+    }
+    {
+        Real3 image_tri0 = tri0;
+        Real3 image_tri1 = tri1;
+        Real3 image_tri2 = tri2;
+
+        image_tri0.z *= -1;
+        image_tri1.z *= -1;
+        image_tri2.z *= -1;
+
+        ${disp_fs("image_tri")}
+
+        final.x += out.x;
+        final.y += out.y;
+        final.z += out.z;
+    }
+</%def>

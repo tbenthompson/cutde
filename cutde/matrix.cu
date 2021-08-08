@@ -35,9 +35,7 @@ void matrix_${name}(GLOBAL_MEM Real* results,
         Real3 slip = make3(0.0, 0.0, 0.0);
         slip.${comp([1,2,0][d_src])} = 1.0;
 
-        ${common.setup_tde()}
-
-        ${evaluator()}
+        ${evaluator("tri")}
 
         %for d_obs in range(vec_dim):
         {
@@ -50,5 +48,5 @@ void matrix_${name}(GLOBAL_MEM Real* results,
 }
 </%def>
 
-${matrix("disp", common.disp, 3)}
-${matrix("strain", common.strain, 6)}
+${matrix("disp_fs", common.disp_fs, 3)}
+${matrix("strain_fs", common.strain_fs, 6)}

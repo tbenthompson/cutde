@@ -3,29 +3,13 @@ from math import ceil
 import numpy as np
 
 import cutde.gpu as cluda
-from cutde.fullspace import (
-    DISP,
-    STRAIN,
+from cutde.coordinators import (
     check_inputs,
     placeholder,
     process_block_inputs,
     solve_types,
     source_dir,
 )
-
-
-def disp_aca(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter):
-    return call_clu_aca(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter, DISP
-    )
-
-
-def strain_aca(
-    obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter
-):
-    return call_clu_aca(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max_iter, STRAIN
-    )
 
 
 def check_tol_max_iter(obs_start, tol, max_iter, float_type):
