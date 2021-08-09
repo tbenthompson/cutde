@@ -61,7 +61,7 @@ void free_${name}(GLOBAL_MEM Real* results,
 
                 %for d_obs in range(vec_dim):
                 {
-                    Real input = final.${comp(d_obs)};
+                    Real input = full_out.${comp(d_obs)};
                     Real y = input - kahanc${d_obs};
                     Real t = sum${d_obs} + y;
                     kahanc${d_obs} = (t - sum${d_obs}) - y;

@@ -54,7 +54,7 @@ void blocks_${name}(GLOBAL_MEM Real* results,
                     int idx = bs + (
                         (obs_idx * ${vec_dim} + ${d_obs}) * n_src + src_idx
                     ) * 3 + ${d_src};
-                    results[idx] = final.${comp(d_obs)};
+                    results[idx] = full_out.${comp(d_obs)};
                 }
                 %endfor
             }

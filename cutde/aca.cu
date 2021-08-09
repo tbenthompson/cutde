@@ -177,7 +177,7 @@ void calc_${matrix_dim}_${name}(
                     int idx = (
                         (obs_idx * ${vec_dim} + (${d_obs} - obs_dim_start)) * n_output_src + src_idx
                     ) * (src_dim_end - src_dim_start) + (d_src - src_dim_start);
-                    output[idx] = final.${comp(d_obs)};
+                    output[idx] = full_out.${comp(d_obs)};
                 }
             }
             %endfor

@@ -40,7 +40,7 @@ void matrix_${name}(GLOBAL_MEM Real* results,
         %for d_obs in range(vec_dim):
         {
             int idx = ((i * ${vec_dim} + ${d_obs}) * n_src + j) * 3 + ${d_src};
-            results[idx] = final.${comp(d_obs)};
+            results[idx] = full_out.${comp(d_obs)};
         }
         %endfor
     }

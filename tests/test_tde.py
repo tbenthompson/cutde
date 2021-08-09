@@ -129,21 +129,14 @@ def test_halfspace():
     tris = np.array([tri] * N_test, dtype=np.float64)
     slips = np.array([slip] * N_test)
 
-    disp = HS.disp(test_pts[:N_test], tris, slips, 0.25)
-    # strain = HS.strain(test_pts[:N_test], tris, slips, nu)
-    # stress = HS.strain_to_stress(strain, sm, nu)
+    nu = 0.25
+    disp = HS.disp(test_pts[:N_test], tris, slips, nu)
+    strain = HS.strain(test_pts[:N_test], tris, slips, nu)
 
     np.testing.assert_almost_equal(disp[:, 0], correct["UEf"][:N_test, 0])
     np.testing.assert_almost_equal(disp[:, 1], correct["UNf"][:N_test, 0])
     np.testing.assert_almost_equal(disp[:, 2], correct["UVf"][:N_test, 0])
-    # np.testing.assert_almost_equal(strain, correct["Strain"][:N_test])
-    # np.testing.assert_almost_equal(stress, correct["Stress"][:N_test])
-
-    # test_ptsF = np.asfortranarray(test_pts[:N_test])
-    # trisF = np.asfortranarray(tris)
-    # slipsF = np.asfortranarray(slips)
-    # dispF = FS.disp(test_ptsF, trisF, slipsF, 0.25)
-    # np.testing.assert_almost_equal(disp, dispF)
+    np.testing.assert_almost_equal(strain, correct["Strain"][:N_test])
 
 
 def setup_matrix_test(dtype, F_ordered, n_obs=10, n_src=10, seed=10):
