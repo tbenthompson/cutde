@@ -508,7 +508,7 @@ WITHIN_KERNEL Real3 AngSetupFSC(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Real 
     Real3 SideVec = sub3(PB, PA);
     Real3 eZ = make3(0.0f,0.0f,1.0f);
     Real beta = acos(-dot3(normalize3(SideVec), eZ));
-    if (abs(beta) < EPS || abs(M_PI-beta) < EPS) {
+    if (fabs(beta) < EPS || fabs(M_PI-beta) < EPS) {
         return make3(0.0f, 0.0f, 0.0f);
     }
     Real3 ey1 = SideVec;
@@ -548,7 +548,7 @@ WITHIN_KERNEL Real6 AngSetupFSC_S(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Rea
     Real3 SideVec = sub3(PB, PA);
     Real3 eZ = make3(0.0f,0.0f,1.0f);
     Real beta = acos(-dot3(normalize3(SideVec), eZ));
-    if (abs(beta) < EPS || abs(M_PI-beta) < EPS) {
+    if (fabs(beta) < EPS || fabs(M_PI-beta) < EPS) {
         return make6(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
     }
     Real3 ey1 = SideVec;
