@@ -31,7 +31,7 @@ void pairs_${name}(GLOBAL_MEM Real* results, int n_pairs,
     ${evaluator("tri")}
 
     %for d in range(vec_dim):
-        results[i * ${vec_dim} + ${d}] = final.${comp(d)};
+        results[i * ${vec_dim} + ${d}] = full_out.${comp(d)};
     %endfor
 }
 </%def>

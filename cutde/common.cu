@@ -463,33 +463,35 @@ WITHIN_KERNEL Real3 AngDisDispFSC(Real y1, Real y2, Real y3, Real beta,
 WITHIN_KERNEL Real3 AngSetupFSC(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Real nu) {
     Real3 SideVec = sub3(PB, PA);
     Real3 eZ = make3(0.0f,0.0f,1.0f);
-    Real beta = acos(dot3(normalize3(SideVec), eZ));
+    Real beta = acos(-dot3(normalize3(SideVec), eZ));
     if (abs(beta) < EPS || abs(M_PI-beta) < EPS) {
         return make3(0.0f, 0.0f, 0.0f);
     }
     Real3 ey1 = SideVec;
     ey1.z = 0;
+    ey1 = normalize3(ey1);
+
     Real3 ey3 = negate3(eZ);
     Real3 ey2 = cross3(ey3, ey1);
 
     Real3 yA = transform3(ey1, ey2, ey3, sub3(obs, PA));
-    Real3 yAB = transform3(ey1, ey2, ey3, SideVec);;
+    Real3 yAB = transform3(ey1, ey2, ey3, SideVec);
     Real3 yB = sub3(yA, yAB);
 
     Real3 slip_adcs = transform3(ey1, ey2, ey3, slip);
 
     Real configuration = beta;
     if (beta*yA.x >= 0) {
-        configuration -= M_PI;
+        configuration = -M_PI+beta;
     }
 
     Real3 vA = AngDisDispFSC(
-        yA.x, yA.y, yA.z, beta,
+        yA.x, yA.y, yA.z, configuration,
         slip_adcs.x, slip_adcs.y, slip_adcs.z, 
         nu, -PA.z
     );
     Real3 vB = AngDisDispFSC(
-        yB.x, yB.y, yB.z, beta,
+        yB.x, yB.y, yB.z, configuration,
         slip_adcs.x, slip_adcs.y, slip_adcs.z, 
         nu, -PB.z
     );
@@ -550,7 +552,7 @@ WITHIN_KERNEL Real3 AngSetupFSC(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Real 
     out = add3(out, mul_scalar3(slip,Fi));
 
     // Transform the complete displacement vector components from TDCS into EFCS
-    Real3 final = inv_transform3(Vnorm, Vstrike, Vdip, out);
+    Real3 full_out = inv_transform3(Vnorm, Vstrike, Vdip, out);
 </%def>
 
 <%def name="strain_fs(tri_prefix)">
@@ -578,7 +580,7 @@ WITHIN_KERNEL Real3 AngSetupFSC(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Real 
     }
 
 
-    Real6 final = tensor_transform3(Vnorm, Vstrike, Vdip, out);
+    Real6 full_out = tensor_transform3(Vnorm, Vstrike, Vdip, out);
 </%def>
 
 <%def name="setup_tde(tri_prefix, is_halfspace)">
@@ -628,22 +630,19 @@ WITHIN_KERNEL Real3 AngSetupFSC(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Real 
 </%def>
 
 <%def name="disp_hs(tri_prefix)">
-    Real3 final;
+    Real3 summed_terms;
     {
         ${disp_fs(tri_prefix)}
 
-        final.x = out.x;
-        final.y = out.y;
-        final.z = out.z;
+        summed_terms = full_out;
 
-        Real3 efcs_slip = transform3(Vnorm, Vstrike, Vdip, slip);
+        Real3 efcs_slip = inv_transform3(Vnorm, Vstrike, Vdip, slip);
         Real3 uvw0 = AngSetupFSC(obs, efcs_slip, ${tri_prefix}0, ${tri_prefix}1, nu);
         Real3 uvw1 = AngSetupFSC(obs, efcs_slip, ${tri_prefix}1, ${tri_prefix}2, nu);
         Real3 uvw2 = AngSetupFSC(obs, efcs_slip, ${tri_prefix}2, ${tri_prefix}0, nu);
+        Real3 fsc_term = add3(add3(uvw0, uvw1), uvw2);
 
-        final.x += uvw0.x + uvw1.x + uvw2.x;
-        final.y += uvw0.y + uvw1.y + uvw2.y;
-        final.z += uvw0.z + uvw1.z + uvw2.z;
+        summed_terms = add3(fsc_term, summed_terms);
     }
     {
         Real3 image_tri0 = tri0;
@@ -656,8 +655,7 @@ WITHIN_KERNEL Real3 AngSetupFSC(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Real 
 
         ${disp_fs("image_tri")}
 
-        final.x += out.x;
-        final.y += out.y;
-        final.z += out.z;
+        summed_terms = add3(summed_terms, full_out);
     }
+    Real3 full_out = summed_terms;
 </%def>

@@ -36,7 +36,9 @@ def get_halfspace_test():
     correct = scipy.io.loadmat("tests/result_halfspace.mat")
     tri = np.array([[0, 0.1, -0.1], [1, -0.2, -0.2], [1, 1, -0.3]])
     slip = [1.3, 1.4, 1.5]
-    return correct, get_pt_grid(), tri, slip
+    obs_pts = get_pt_grid()
+    obs_pts[:, 2] -= 3
+    return correct, obs_pts, tri, slip
 
 
 def py_tde_tester(setup_fnc, N_test=-1):
@@ -119,8 +121,8 @@ def test_cluda_simple():
 
 def test_halfspace():
     correct, test_pts, tri, slip = get_halfspace_test()
-    N_test = 1
 
+    N_test = None
     if N_test is None:
         N_test = correct["UEf"].shape[0]
 

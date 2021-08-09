@@ -60,6 +60,9 @@ filename = '../result_halfspace.mat';
 x = linspace(-3, 3, n);
 y = linspace(-3, 3, n);
 z = linspace(-6, 0, n);
+x = [-3]
+y = [-3]
+z = [-6]
 
 [X,Y,Z] = meshgrid(x, y, z);
 Xf = reshape(X, numel(X), 1);
