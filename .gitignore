@@ -10,3 +10,5 @@ dist
 *.tar.gz
 *.npy
 *.rendered
+.rendered*
+*.so
