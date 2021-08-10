@@ -454,4 +454,6 @@ void aca_${name}(
 </%def>
 
 ${aca("disp_fs", common.disp_fs, 3)}
+${aca("disp_hs", common.disp_hs, 3)}
 ${aca("strain_fs", common.strain_fs, 6)}
+${aca("strain_hs", common.strain_hs, 6)}

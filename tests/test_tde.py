@@ -156,15 +156,17 @@ def setup_matrix_test(dtype, F_ordered, n_obs=10, n_src=10, seed=10):
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 @pytest.mark.parametrize("F_ordered", [True, False])
 @pytest.mark.parametrize("field", ["disp", "strain"])
-def test_matrix(dtype, F_ordered, field):
+@pytest.mark.parametrize("module_name", ["HS", "FS"])
+def test_matrix(dtype, F_ordered, field, module_name):
     pts, tris, slips = setup_matrix_test(dtype, F_ordered)
 
+    module = HS if module_name == "HS" else FS
     if field == "disp":
-        simple_fnc = FS.disp
-        matrix_fnc = FS.disp_matrix
+        simple_fnc = module.disp
+        matrix_fnc = module.disp_matrix
     else:
-        simple_fnc = FS.strain
-        matrix_fnc = FS.strain_matrix
+        simple_fnc = module.strain
+        matrix_fnc = module.strain_matrix
 
     mat1 = []
     slips[:] = 1
@@ -186,15 +188,17 @@ def test_matrix(dtype, F_ordered, field):
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 @pytest.mark.parametrize("F_ordered", [True, False])
 @pytest.mark.parametrize("field", ["disp", "strain"])
-def test_matrix_free(dtype, F_ordered, field):
+@pytest.mark.parametrize("module_name", ["HS", "FS"])
+def test_matrix_free(dtype, F_ordered, field, module_name):
     pts, tris, slips = setup_matrix_test(dtype, F_ordered)
 
+    module = HS if module_name == "HS" else FS
     if field == "disp":
-        matrix_fnc = FS.disp_matrix
-        free_fnc = FS.disp_free
+        matrix_fnc = module.disp_matrix
+        free_fnc = module.disp_free
     else:
-        matrix_fnc = FS.strain_matrix
-        free_fnc = FS.strain_free
+        matrix_fnc = module.strain_matrix
+        free_fnc = module.strain_free
 
     S1 = matrix_fnc(pts, tris, 0.25).reshape((-1, slips.size)).dot(slips.flatten())
     S2 = free_fnc(pts, tris, slips, 0.25).flatten()
@@ -210,15 +214,17 @@ def test_matrix_free(dtype, F_ordered, field):
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 @pytest.mark.parametrize("F_ordered", [True, False])
 @pytest.mark.parametrize("field", ["disp", "strain"])
-def test_block(dtype, F_ordered, field):
+@pytest.mark.parametrize("module_name", ["HS", "FS"])
+def test_block(dtype, F_ordered, field, module_name):
     pts, tris, slips = setup_matrix_test(dtype, F_ordered)
 
+    module = HS if module_name == "HS" else FS
     if field == "disp":
-        matrix_fnc = FS.disp_matrix
-        block_fnc = FS.disp_block
+        matrix_fnc = module.disp_matrix
+        block_fnc = module.disp_block
     else:
-        matrix_fnc = FS.strain_matrix
-        block_fnc = FS.strain_block
+        matrix_fnc = module.strain_matrix
+        block_fnc = module.strain_block
 
     M1 = matrix_fnc(pts, tris, 0.25)
 

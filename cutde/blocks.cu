@@ -64,5 +64,7 @@ void blocks_${name}(GLOBAL_MEM Real* results,
 }
 </%def>
 
-${tde_blocks("strain_fs", common.strain_fs, 6)}
 ${tde_blocks("disp_fs", common.disp_fs, 3)}
+${tde_blocks("disp_hs", common.disp_hs, 3)}
+${tde_blocks("strain_fs", common.strain_fs, 6)}
+${tde_blocks("strain_hs", common.strain_hs, 6)}

@@ -81,4 +81,6 @@ void free_${name}(GLOBAL_MEM Real* results,
 </%def>
 
 ${tde_free("disp_fs", common.disp_fs, 3)}
+${tde_free("disp_hs", common.disp_hs, 3)}
 ${tde_free("strain_fs", common.strain_fs, 6)}
+${tde_free("strain_hs", common.strain_hs, 6)}
