@@ -19,7 +19,7 @@ WITHIN_KERNEL Real${dim} ${name}${dim}(Real${dim} a, ${b_type} b) {
 }
 </%def>
 
-<%def name="defs()">
+<%def name="defs(cluda_preamble, float_type)">
 
 ${cluda_preamble}
 
@@ -385,7 +385,7 @@ WITHIN_KERNEL Real3 AngDisDispFSC(Real y1, Real y2, Real y3, Real beta,
 
     Real sinB = sin(beta);
     Real cosB = cos(beta);
-    Real cotB = 1.0/tan(beta);
+    Real cotB = cosB / sinB;
     Real y3b = y3+2*a;
     Real z1b = y1*cosB+y3b*sinB;
     Real z3b = -y1*sinB+y3b*cosB;
@@ -465,7 +465,7 @@ WITHIN_KERNEL Real6 AngDisStrainFSC(Real y1, Real y2, Real y3, Real beta,
 
     Real sinB = sin(beta);
     Real cosB = cos(beta);
-    Real cotB = 1.0 / tan(beta);
+    Real cotB = cosB / sinB;
     Real y3b = y3+2*a;
     Real z1b = y1*cosB+y3b*sinB;
     Real z3b = -y1*sinB+y3b*cosB;

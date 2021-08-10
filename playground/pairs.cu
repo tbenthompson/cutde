@@ -38,3 +38,6 @@ void pairs_${name}(GLOBAL_MEM Real* results, int n_pairs,
 </%def>
 
 ${pairs("disp_fs", common.disp_fs, 3)}
+${pairs("disp_hs", common.disp_hs, 3)}
+${pairs("strain_fs", common.strain_fs, 6)}
+${pairs("strain_hs", common.strain_hs, 6)}
