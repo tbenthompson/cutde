@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-import cutde
+import cutde.fullspace as FS
 
 xs = np.linspace(-2, 2, 200)
 ys = np.linspace(-2, 2, 200)
@@ -11,7 +11,7 @@ pts = np.array([obsx, obsy, 0 * obsy]).reshape((3, -1)).T.copy()
 fault_pts = np.array([[-1, 0, 0], [1, 0, 0], [1, 0, -1], [-1, 0, -1]])
 fault_tris = np.array([[0, 1, 2], [0, 2, 3]], dtype=np.int64)
 
-disp_mat = cutde.disp_matrix(obs_pts=pts, tris=fault_pts[fault_tris], nu=0.25)
+disp_mat = FS.disp_matrix(obs_pts=pts, tris=fault_pts[fault_tris], nu=0.25)
 
 slip = np.array([[1, 0, 0], [1, 0, 0]])
 disp = disp_mat.reshape((-1, 6)).dot(slip.flatten())

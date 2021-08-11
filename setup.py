@@ -8,7 +8,7 @@ version = open("VERSION").read()
 description = open("README.md").read()
 
 for float_type in ["float", "double"]:
-    tmpl_args = dict(free_block_size=1, float_type=float_type)
+    tmpl_args = dict(float_type=float_type)
 
     import mako.lookup
 
@@ -43,7 +43,7 @@ ext_modules = [
 
 setup(
     packages=["cutde"],
-    install_requires=[],
+    install_requires=["mako", "pybind11"],
     ext_modules=ext_modules,
     zip_safe=False,
     include_package_data=True,

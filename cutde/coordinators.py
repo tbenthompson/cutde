@@ -195,9 +195,7 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
     gpu_results = backend.zeros(n_obs * vec_dim, float_type)
 
     n_obs_blocks = int(np.ceil(n_obs / block_size))
-    gpu_config = dict(
-        free_block_size=block_size, float_type=backend.np_to_c_type(float_type)
-    )
+    gpu_config = dict(float_type=backend.np_to_c_type(float_type))
     module = backend.load_module("free.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
     # Split up the sources into chunks so that we don't completely overwhelm a

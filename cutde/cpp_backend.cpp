@@ -19,18 +19,11 @@ struct XYZ {
     SIZE_T z;
 };
 
-thread_local XYZ threadIdx;
 thread_local XYZ blockIdx;
-XYZ blockDim;
 XYZ gridDim;
 
-WITHIN_KERNEL SIZE_T get_local_id(unsigned int dim)
-{
-    if(dim == 0) return threadIdx.x;
-    if(dim == 1) return threadIdx.y;
-    if(dim == 2) return threadIdx.z;
-    return 0;
-}
+WITHIN_KERNEL SIZE_T get_local_id(unsigned int dim) { return 0; }
+
 WITHIN_KERNEL SIZE_T get_group_id(unsigned int dim)
 {
     if(dim == 0) return blockIdx.x;
@@ -38,13 +31,9 @@ WITHIN_KERNEL SIZE_T get_group_id(unsigned int dim)
     if(dim == 2) return blockIdx.z;
     return 0;
 }
-WITHIN_KERNEL SIZE_T get_local_size(unsigned int dim)
-{
-    if(dim == 0) return blockDim.x;
-    if(dim == 1) return blockDim.y;
-    if(dim == 2) return blockDim.z;
-    return 1;
-}
+
+WITHIN_KERNEL SIZE_T get_local_size(unsigned int dim) { return 1; }
+
 WITHIN_KERNEL SIZE_T get_num_groups(unsigned int dim)
 {
     if(dim == 0) return gridDim.x;
@@ -54,11 +43,11 @@ WITHIN_KERNEL SIZE_T get_num_groups(unsigned int dim)
 }
 WITHIN_KERNEL SIZE_T get_global_size(unsigned int dim)
 {
-    return get_num_groups(dim) * get_local_size(dim);
+    return get_num_groups(dim);
 }
 WITHIN_KERNEL SIZE_T get_global_id(unsigned int dim)
 {
-    return get_local_id(dim) + get_group_id(dim) * get_local_size(dim);
+    return get_group_id(dim);
 }
 
 #include <pybind11/pybind11.h>
@@ -101,16 +90,9 @@ decltype(auto) wrapper(R(*fn)(Args...))
              std::tuple<SIZE_T,SIZE_T,SIZE_T> block) 
     {
         gridDim = {std::get<0>(grid), std::get<1>(grid), std::get<2>(grid)};
-        blockDim = {std::get<0>(block), std::get<1>(block), std::get<2>(block)};
         blockIdx = {0,0,0};
-        threadIdx = {0,0,0};
 
         SIZE_T Ngrid = gridDim.x * gridDim.y * gridDim.z;
-
-        // block must be (1,1,1)
-        assert(std::get<0>(block) == 0);
-        assert(std::get<1>(block) == 0);
-        assert(std::get<2>(block) == 0);
 
         auto ptr_args = std::make_tuple(conv_arg(args)...);
 

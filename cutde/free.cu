@@ -13,6 +13,7 @@ void free_${name}(GLOBAL_MEM Real* results,
 {
     int i = get_global_id(0);
     int group_id = get_local_id(0);
+    int block_size = get_local_size(0);
 
     %for d_obs in range(vec_dim):
         Real sum${d_obs} = 0.0;
@@ -27,14 +28,14 @@ void free_${name}(GLOBAL_MEM Real* results,
     }
 
     % for d1 in range(3):
-        LOCAL_MEM Real3 sh_tri${d1}[${free_block_size}];
+        LOCAL_MEM Real3 sh_tri${d1}[256];
     % endfor
-    LOCAL_MEM Real3 sh_slips[${free_block_size}];
+    LOCAL_MEM Real3 sh_slips[256];
 
     // NOTE: The blocking scheme set up here seems to be irrelevant because the
     // runtime is totally dominated by the floating point operations inside the
     // TDE evaluation.
-    for (int block_start = src_start; block_start < src_end; block_start += ${free_block_size}) {
+    for (int block_start = src_start; block_start < src_end; block_start += block_size) {
         int j = block_start + group_id;
         if (j < src_end) {
             % for d1 in range(3):
@@ -48,7 +49,7 @@ void free_${name}(GLOBAL_MEM Real* results,
         ${common.LOCAL_BARRIER()}
 
         if (i < n_obs) {
-            int block_end = min(src_end, block_start + ${free_block_size});
+            int block_end = min(src_end, block_start + block_size);
             int block_length = block_end - block_start;
             for (int block_idx = 0; block_idx < block_length; block_idx++) {
                 % for d1 in range(3):
