@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <cstdio>
+#include <algorithm>
 
 #define WITHIN_KERNEL 
 #define KERNEL
