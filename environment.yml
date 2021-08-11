@@ -16,3 +16,4 @@ dependencies:
   - pip
   - mako
   - twine
+  - pybind11
