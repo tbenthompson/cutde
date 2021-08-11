@@ -29,7 +29,7 @@ def ptr(arr):
     return arr
 
 
-def to_gpu(arr, float_type):
+def to(arr, float_type):
     ensure_initialized()
     if type(arr) is pycuda.gpuarray.GPUArray:
         return arr
@@ -37,14 +37,18 @@ def to_gpu(arr, float_type):
     return pycuda.gpuarray.to_gpu(to_type)
 
 
-def empty_gpu(shape, float_type):
+def empty(shape, float_type):
     ensure_initialized()
     return pycuda.gpuarray.empty(shape, float_type)
 
 
-def zeros_gpu(shape, float_type):
+def zeros(shape, float_type):
     ensure_initialized()
     return pycuda.gpuarray.zeros(shape, float_type)
+
+
+def get(arr):
+    return arr.get()
 
 
 class CUDAContextWrapper(object):
@@ -66,9 +70,11 @@ class ModuleWrapper:
     def __getattr__(self, name):
         kernel = self.module.get_function(name)
 
-        def wrapper(*args, **kwargs):
-            arg_ptrs = [ptr(a) for a in args]
-            return kernel(*arg_ptrs, **kwargs)
+        def wrapper(*args):
+            arg_ptrs = [ptr(a) for a in args[:-2]]
+            grid = args[-2]
+            block = args[-1]
+            return kernel(*arg_ptrs, grid=grid, block=block)
 
         return wrapper
 
@@ -79,7 +85,11 @@ def compile(code):
     return ModuleWrapper(pycuda.compiler.SourceModule(code, options=compiler_args))
 
 
-def load_gpu(
+def max_block_size(requested):
+    return requested
+
+
+def load_module(
     tmpl_name, tmpl_dir=None, save_code=False, no_caching=False, tmpl_args=None
 ):
     return load(
@@ -91,7 +101,6 @@ preamble = """
 #include <stdio.h>
 #define CUDA
 // taken from pycuda._cluda
-#define LOCAL_BARRIER __syncthreads()
 #define WITHIN_KERNEL __device__
 #define KERNEL extern "C" __global__
 #define GLOBAL_MEM /* empty */

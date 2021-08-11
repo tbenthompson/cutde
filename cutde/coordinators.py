@@ -123,17 +123,17 @@ def call_clu(obs_pts, tris, slips, nu, fnc):
     float_type, (obs_pts, tris, slips) = solve_types(obs_pts, tris, slips)
 
     n = obs_pts.shape[0]
-    block_size = 128
+    block_size = backend.max_block_size(16)
     n_blocks = int(np.ceil(n / block_size))
     gpu_config = dict(
         block_size=block_size, float_type=backend.np_to_c_type(float_type)
     )
-    module = backend.load_gpu("pairs.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    module = backend.load_module("pairs.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = backend.empty_gpu(n * vec_dim, float_type)
-    gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
-    gpu_tris = backend.to_gpu(tris, float_type)
-    gpu_slips = backend.to_gpu(slips, float_type)
+    gpu_results = backend.empty(n * vec_dim, float_type)
+    gpu_obs_pts = backend.to(obs_pts, float_type)
+    gpu_tris = backend.to(tris, float_type)
+    gpu_slips = backend.to(slips, float_type)
 
     getattr(module, "pairs_" + fnc_name)(
         gpu_results,
@@ -142,10 +142,10 @@ def call_clu(obs_pts, tris, slips, nu, fnc):
         gpu_tris,
         gpu_slips,
         float_type(nu),
-        grid=(n_blocks, 1, 1),
-        block=(block_size, 1, 1),
+        (n_blocks, 1, 1),
+        (block_size, 1, 1),
     )
-    out = gpu_results.get().reshape((n, vec_dim))
+    out = backend.get(gpu_results).reshape((n, vec_dim))
     return out
 
 
@@ -156,17 +156,15 @@ def call_clu_matrix(obs_pts, tris, nu, fnc):
 
     n_obs = obs_pts.shape[0]
     n_src = tris.shape[0]
-    block_size = 16
+    block_size = backend.max_block_size(16)
     n_obs_blocks = int(np.ceil(n_obs / block_size))
     n_src_blocks = int(np.ceil(n_src / block_size))
-    gpu_config = dict(
-        block_size=block_size, float_type=backend.np_to_c_type(float_type)
-    )
-    module = backend.load_gpu("matrix.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    gpu_config = dict(float_type=backend.np_to_c_type(float_type))
+    module = backend.load_module("matrix.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = backend.empty_gpu(n_obs * vec_dim * n_src * 3, float_type)
-    gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
-    gpu_tris = backend.to_gpu(tris, float_type)
+    gpu_results = backend.empty(n_obs * vec_dim * n_src * 3, float_type)
+    gpu_obs_pts = backend.to(obs_pts, float_type)
+    gpu_tris = backend.to(tris, float_type)
 
     getattr(module, "matrix_" + fnc_name)(
         gpu_results,
@@ -175,10 +173,10 @@ def call_clu_matrix(obs_pts, tris, nu, fnc):
         gpu_obs_pts,
         gpu_tris,
         float_type(nu),
-        grid=(n_obs_blocks, n_src_blocks, 1),
-        block=(block_size, block_size, 1),
+        (n_obs_blocks, n_src_blocks, 1),
+        (block_size, block_size, 1),
     )
-    out = gpu_results.get().reshape((n_obs, vec_dim, n_src, 3))
+    out = backend.get(gpu_results).reshape((n_obs, vec_dim, n_src, 3))
     return out
 
 
@@ -189,18 +187,18 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
 
     n_obs = obs_pts.shape[0]
     n_src = tris.shape[0]
-    block_size = 256
+    block_size = backend.max_block_size(256)
 
-    gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
-    gpu_tris = backend.to_gpu(tris, float_type)
-    gpu_slips = backend.to_gpu(slips, float_type)
-    gpu_results = backend.zeros_gpu(n_obs * vec_dim, float_type)
+    gpu_obs_pts = backend.to(obs_pts, float_type)
+    gpu_tris = backend.to(tris, float_type)
+    gpu_slips = backend.to(slips, float_type)
+    gpu_results = backend.zeros(n_obs * vec_dim, float_type)
 
     n_obs_blocks = int(np.ceil(n_obs / block_size))
     gpu_config = dict(
-        block_size=block_size, float_type=backend.np_to_c_type(float_type)
+        free_block_size=block_size, float_type=backend.np_to_c_type(float_type)
     )
-    module = backend.load_gpu("free.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    module = backend.load_module("free.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
     # Split up the sources into chunks so that we don't completely overwhelm a
     # single GPU machine and cause the screen to lock up.
@@ -222,10 +220,10 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
             gpu_tris,
             gpu_slips,
             float_type(nu),
-            grid=(n_obs_blocks, 1, 1),
-            block=(block_size, 1, 1),
+            (n_obs_blocks, 1, 1),
+            (block_size, 1, 1),
         )
-        out += gpu_results.get().reshape((n_obs, vec_dim))
+        out += backend.get(gpu_results).reshape((n_obs, vec_dim))
     return out
 
 
@@ -268,18 +266,18 @@ def call_clu_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, fn
     block_start[-1] = block_end[-1]
 
     n_blocks = obs_end.shape[0]
-    team_size = 16
+    team_size = backend.max_block_size(16)
     gpu_config = dict(float_type=backend.np_to_c_type(float_type))
-    module = backend.load_gpu("blocks.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    module = backend.load_module("blocks.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = backend.zeros_gpu(block_end[-1], float_type)
-    gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
-    gpu_tris = backend.to_gpu(tris, float_type)
-    gpu_obs_start = backend.to_gpu(obs_start, np.int32)
-    gpu_obs_end = backend.to_gpu(obs_end, np.int32)
-    gpu_src_start = backend.to_gpu(src_start, np.int32)
-    gpu_src_end = backend.to_gpu(src_end, np.int32)
-    gpu_block_start = backend.to_gpu(block_start, np.int32)
+    gpu_results = backend.zeros(block_end[-1], float_type)
+    gpu_obs_pts = backend.to(obs_pts, float_type)
+    gpu_tris = backend.to(tris, float_type)
+    gpu_obs_start = backend.to(obs_start, np.int32)
+    gpu_obs_end = backend.to(obs_end, np.int32)
+    gpu_src_start = backend.to(src_start, np.int32)
+    gpu_src_end = backend.to(src_end, np.int32)
+    gpu_block_start = backend.to(block_start, np.int32)
 
     getattr(module, "blocks_" + fnc_name)(
         gpu_results,
@@ -291,7 +289,7 @@ def call_clu_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, fn
         gpu_src_end,
         gpu_block_start,
         float_type(nu),
-        grid=(n_blocks, 1, 1),
-        block=(team_size, 1, 1),
+        (n_blocks, 1, 1),
+        (team_size, 1, 1),
     )
-    return gpu_results.get(), block_start
+    return backend.get(gpu_results), block_start

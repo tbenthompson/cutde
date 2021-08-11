@@ -40,12 +40,3 @@ ${pairs("disp_fs", common.disp_fs, 3)}
 ${pairs("disp_hs", common.disp_hs, 3)}
 ${pairs("strain_fs", common.strain_fs, 6)}
 ${pairs("strain_hs", common.strain_hs, 6)}
-
-% if backend == 'cpp': 
-PYBIND11_MODULE(simple_module, m) {
-    m.def("pairs_disp_fs", wrapper(pairs_disp_fs));
-    m.def("pairs_disp_hs", wrapper(pairs_disp_hs));
-    m.def("pairs_strain_fs", wrapper(pairs_strain_fs));
-    m.def("pairs_strain_hs", wrapper(pairs_strain_hs));
-}
-% endif

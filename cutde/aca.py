@@ -51,12 +51,12 @@ def call_clu_aca(
     tol, max_iter = check_tol_max_iter(obs_start, tol, max_iter, float_type)
 
     default_chunk_size = 512
-    team_size = 32
+    team_size = backend.max_block_size(32)
     n_blocks = obs_end.shape[0]
 
     verbose = False
     gpu_config = dict(float_type=backend.np_to_c_type(float_type), verbose=verbose)
-    module = backend.load_gpu("aca.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    module = backend.load_module("aca.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
     n_chunks = int(ceil(n_blocks / default_chunk_size))
     appxs = []
@@ -76,31 +76,31 @@ def call_clu_aca(
         block_sizes = n_rows * n_cols
 
         # Storage for the U, V output matrices. These will be in a packed format.
-        gpu_buffer = backend.empty_gpu(block_sizes.sum(), float_type)
+        gpu_buffer = backend.empty(block_sizes.sum(), float_type)
 
         # Storage for temporary rows and columns: RIref, RJref, RIstar, RJstar
         fworkspace_per_block = n_cols + n_rows + 3 * n_cols + vec_dim * n_rows
         fworkspace_ends = np.cumsum(fworkspace_per_block)
         fworkspace_starts = fworkspace_ends - fworkspace_per_block
-        gpu_fworkspace = backend.empty_gpu(fworkspace_ends[-1], float_type)
-        gpu_fworkspace_starts = backend.to_gpu(fworkspace_starts, np.int32)
+        gpu_fworkspace = backend.empty(fworkspace_ends[-1], float_type)
+        gpu_fworkspace_starts = backend.to(fworkspace_starts, np.int32)
 
         # uv_ptrs forms arrays that point to the start of each U/V vector pairs in
         # the main output buffer
         uv_ptrs_size = np.minimum(n_rows, n_cols)
         uv_ptrs_ends = np.cumsum(uv_ptrs_size)
         uv_ptrs_starts = uv_ptrs_ends - uv_ptrs_size
-        gpu_uv_ptrs_starts = backend.to_gpu(uv_ptrs_starts, np.int32)
-        gpu_uv_ptrs = backend.empty_gpu(uv_ptrs_ends[-1], np.int32)
-        gpu_iworkspace = backend.empty_gpu(uv_ptrs_ends[-1], np.int32)
+        gpu_uv_ptrs_starts = backend.to(uv_ptrs_starts, np.int32)
+        gpu_uv_ptrs = backend.empty(uv_ptrs_ends[-1], np.int32)
+        gpu_iworkspace = backend.empty(uv_ptrs_ends[-1], np.int32)
 
         # Output space for specifying the number of terms used for each
         # approximation.
-        gpu_n_terms = backend.empty_gpu(chunk_size, np.int32)
+        gpu_n_terms = backend.empty(chunk_size, np.int32)
 
         # Storage space for a pointer to the next empty portion of the output
         # buffer.
-        gpu_next_ptr = backend.zeros_gpu(1, np.int32)
+        gpu_next_ptr = backend.zeros(1, np.int32)
 
         # The index of the starting reference rows/cols.
         if Iref0 is None:
@@ -111,17 +111,17 @@ def call_clu_aca(
             Jref0_chunk = np.random.randint(0, n_cols, size=chunk_size, dtype=np.int32)
         else:
             Jref0_chunk = Jref0[chunk_start:chunk_end]
-        gpu_Iref0 = backend.to_gpu(Iref0_chunk, np.int32)
-        gpu_Jref0 = backend.to_gpu(Jref0_chunk, np.int32)
+        gpu_Iref0 = backend.to(Iref0_chunk, np.int32)
+        gpu_Jref0 = backend.to(Jref0_chunk, np.int32)
 
-        gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
-        gpu_tris = backend.to_gpu(tris, float_type)
-        gpu_obs_start = backend.to_gpu(obs_start[chunk_start:chunk_end], np.int32)
-        gpu_obs_end = backend.to_gpu(obs_end[chunk_start:chunk_end], np.int32)
-        gpu_src_start = backend.to_gpu(src_start[chunk_start:chunk_end], np.int32)
-        gpu_src_end = backend.to_gpu(src_end[chunk_start:chunk_end], np.int32)
-        gpu_tol = backend.to_gpu(tol, float_type)
-        gpu_max_iter = backend.to_gpu(max_iter, np.int32)
+        gpu_obs_pts = backend.to(obs_pts, float_type)
+        gpu_tris = backend.to(tris, float_type)
+        gpu_obs_start = backend.to(obs_start[chunk_start:chunk_end], np.int32)
+        gpu_obs_end = backend.to(obs_end[chunk_start:chunk_end], np.int32)
+        gpu_src_start = backend.to(src_start[chunk_start:chunk_end], np.int32)
+        gpu_src_end = backend.to(src_end[chunk_start:chunk_end], np.int32)
+        gpu_tol = backend.to(tol, float_type)
+        gpu_max_iter = backend.to(max_iter, np.int32)
 
         if verbose:
             print(f"gpu_buffer.shape = {gpu_buffer.shape}")

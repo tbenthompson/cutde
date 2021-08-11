@@ -13,19 +13,40 @@ try:
         # with OpenCL or C++ even if CUDA is installed.
         raise ImportError
 
-    from cutde.cuda import empty_gpu, load_gpu, to_gpu, zeros_gpu  # noqa: F401
+    from cutde.cuda import (  # noqa: F401
+        empty,
+        get,
+        load_module,
+        max_block_size,
+        to,
+        zeros,
+    )
 
     which_backend = "cuda"
 except ImportError:
     try:
         if os.environ.get("CUTDE_USE_BACKEND", "opencl") != "opencl":
             raise ImportError
-        from cutde.opencl import empty_gpu, load_gpu, to_gpu, zeros_gpu  # noqa: F401
+        from cutde.opencl import (  # noqa: F401
+            empty,
+            get,
+            load_module,
+            max_block_size,
+            to,
+            zeros,
+        )
 
         which_backend = "opencl"
 
     except ImportError:
-        from cutde.cpp import empty_gpu, load_gpu, to_gpu, zeros_gpu  # noqa: F401
+        from cutde.cpp import (  # noqa: F401
+            empty,
+            get,
+            load_module,
+            max_block_size,
+            to,
+            zeros,
+        )
 
         which_backend = "cpp"
 

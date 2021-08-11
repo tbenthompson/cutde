@@ -264,7 +264,7 @@ void aca_${name}(
     Real frob_est = 0;
     int k = 0;
     for (; k < max_iter; k++) {
-        LOCAL_BARRIER;
+        ${LOCAL_BARRIER()}
         % if verbose:
             printf("\n\nstart iteration %i\n", k);
             for (int i = 0; i < 5; i++) {

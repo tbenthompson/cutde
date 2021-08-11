@@ -19,8 +19,18 @@ WITHIN_KERNEL Real${dim} ${name}${dim}(Real${dim} a, ${b_type} b) {
 }
 </%def>
 
+<%def name="LOCAL_BARRIER()">
+% if backend == 'cuda':
+__syncthreads();
+% elif backend == 'opencl':
+barrier(CLK_LOCAL_MEM_FENCE)
+% endif
+</%def>
+
 <%def name="defs(preamble, float_type)">
 
+#ifndef CUTDE_COMMON
+#define CUTDE_COMMON
 ${preamble}
 
 <%
@@ -583,7 +593,7 @@ WITHIN_KERNEL Real6 AngSetupFSC_S(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Rea
     return tensor_transform3(ey1, ey2, ey3, v);
 }
 
-
+#endif
 </%def> //END OF defs()
 
 <%def name="disp_fs(tri_prefix, is_halfspace='false')">
