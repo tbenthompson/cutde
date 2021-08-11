@@ -308,7 +308,6 @@ A = [Vnorm Vstrike Vdip];
 [Stress1,Strain1] = AngSetupFSC_S(X,Y,Z,bX,bY,bZ,P1,P2,mu,lambda); % P1P2
 [Stress2,Strain2] = AngSetupFSC_S(X,Y,Z,bX,bY,bZ,P2,P3,mu,lambda); % P2P3
 [Stress3,Strain3] = AngSetupFSC_S(X,Y,Z,bX,bY,bZ,P3,P1,mu,lambda); % P3P1
-Strain1
 
 % Calculate total harmonic function contribution to strains and stresses
 Stress = Stress1+Stress2+Stress3;
@@ -475,10 +474,6 @@ else
     [v11B(~I),v22B(~I),v33B(~I),v12B(~I),v13B(~I),v23B(~I)] = ...
         AngDisStrainFSC(y1B(~I),y2B(~I),y3B(~I),beta,b1,b2,b3,nu,-PB(3));
     
-    "A"
-    [v11A, v22A, v33A, v12A, v13A, v23A]
-    "B"
-    [v11B, v22B, v33B, v12B, v13B, v23B]
     % Calculate total Free Surface Correction to strains in ADCS
     v11 = v11B-v11A;
     v22 = v22B-v22A;
