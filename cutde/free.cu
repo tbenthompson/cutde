@@ -1,7 +1,7 @@
 <%namespace module="cutde.mako_helpers" import="*"/>
 <%namespace name="common" file="common.cu"/>
 
-${common.defs()}
+${common.defs(preamble, float_type)}
 
 <%def name="tde_free(name, evaluator, vec_dim)">
 KERNEL
@@ -27,14 +27,14 @@ void free_${name}(GLOBAL_MEM Real* results,
     }
 
     % for d1 in range(3):
-        LOCAL_MEM Real3 sh_tri${d1}[${block_size}];
+        LOCAL_MEM Real3 sh_tri${d1}[${free_block_size}];
     % endfor
-    LOCAL_MEM Real3 sh_slips[${block_size}];
+    LOCAL_MEM Real3 sh_slips[${free_block_size}];
 
     // NOTE: The blocking scheme set up here seems to be irrelevant because the
     // runtime is totally dominated by the floating point operations inside the
     // TDE evaluation.
-    for (int block_start = src_start; block_start < src_end; block_start += ${block_size}) {
+    for (int block_start = src_start; block_start < src_end; block_start += ${free_block_size}) {
         int j = block_start + group_id;
         if (j < src_end) {
             % for d1 in range(3):
@@ -45,10 +45,10 @@ void free_${name}(GLOBAL_MEM Real* results,
             % endfor
         }
 
-        LOCAL_BARRIER;
+        ${common.LOCAL_BARRIER()}
 
         if (i < n_obs) {
-            int block_end = min(src_end, block_start + ${block_size});
+            int block_end = min(src_end, block_start + ${free_block_size});
             int block_length = block_end - block_start;
             for (int block_idx = 0; block_idx < block_length; block_idx++) {
                 % for d1 in range(3):
@@ -57,13 +57,11 @@ void free_${name}(GLOBAL_MEM Real* results,
 
                 Real3 slip = sh_slips[block_idx];
 
-                ${common.setup_tde()}
-
-                ${evaluator()}
+                ${evaluator("tri")}
 
                 %for d_obs in range(vec_dim):
                 {
-                    Real input = final.${comp(d_obs)};
+                    Real input = full_out.${comp(d_obs)};
                     Real y = input - kahanc${d_obs};
                     Real t = sum${d_obs} + y;
                     kahanc${d_obs} = (t - sum${d_obs}) - y;
@@ -82,5 +80,7 @@ void free_${name}(GLOBAL_MEM Real* results,
 }
 </%def>
 
-${tde_free("disp", common.disp, 3)}
-${tde_free("strain", common.strain, 6)}
+${tde_free("disp_fs", common.disp_fs, 3)}
+${tde_free("disp_hs", common.disp_hs, 3)}
+${tde_free("strain_fs", common.strain_fs, 6)}
+${tde_free("strain_hs", common.strain_hs, 6)}

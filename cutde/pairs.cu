@@ -1,7 +1,7 @@
 <%namespace module="cutde.mako_helpers" import="*"/>
 <%namespace name="common" file="common.cu"/>
 
-${common.defs()}
+${common.defs(preamble, float_type)}
 
 <%def name="pairs(name, evaluator, vec_dim)">
 KERNEL
@@ -28,15 +28,15 @@ void pairs_${name}(GLOBAL_MEM Real* results, int n_pairs,
         slips[i * 3 + 1]
     );
 
-    ${common.setup_tde()}
-
-    ${evaluator()}
+    ${evaluator("tri")}
 
     %for d in range(vec_dim):
-        results[i * ${vec_dim} + ${d}] = final.${comp(d)};
+        results[i * ${vec_dim} + ${d}] = full_out.${comp(d)};
     %endfor
 }
 </%def>
 
-${pairs("disp", common.disp, 3)}
-${pairs("strain", common.strain, 6)}
+${pairs("disp_fs", common.disp_fs, 3)}
+${pairs("disp_hs", common.disp_hs, 3)}
+${pairs("strain_fs", common.strain_fs, 6)}
+${pairs("strain_hs", common.strain_hs, 6)}

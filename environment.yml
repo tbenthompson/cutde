@@ -2,17 +2,25 @@ name: cutde
 channels:
   - conda-forge
 dependencies:
+  # Used for cutde
   - numpy
   - scipy
   - matplotlib
   - pyproj
+
+  # Developer tools
+  - pre-commit
   - black
   - flake8
   - isort
   - pytest
   - pytest-cov
-  - pre-commit
   - ipdb
   - pip
-  - mako
   - twine
+
+  # build tools
+  - c-compiler
+  - cxx-compiler
+  - pybind11
+  - mako

@@ -1,56 +1,51 @@
 from .aca import call_clu_aca
 from .coordinators import (
-    DISP_FS,
-    STRAIN_FS,
+    DISP_HS,
+    STRAIN_HS,
     call_clu,
     call_clu_block,
     call_clu_free,
     call_clu_matrix,
 )
 from .geometry import strain_to_stress  # noqa: F401
-from .TDdispFS import TDdispFS
 
-DISP_SPEC = DISP_FS
-STRAIN_SPEC = STRAIN_FS
-
-
-def py_disp(obs_pt, tri, slip, nu):
-    return TDdispFS(obs_pt, tri, slip, nu)
+DISP_SPEC = DISP_HS
+STRAIN_SPEC = STRAIN_HS
 
 
 def disp(obs_pts, tris, slips, nu):
-    return call_clu(obs_pts, tris, slips, nu, DISP_FS)
+    return call_clu(obs_pts, tris, slips, nu, DISP_HS)
 
 
 def strain(obs_pts, tris, slips, nu):
-    return call_clu(obs_pts, tris, slips, nu, STRAIN_FS)
+    return call_clu(obs_pts, tris, slips, nu, STRAIN_HS)
 
 
 def disp_matrix(obs_pts, tris, nu):
-    return call_clu_matrix(obs_pts, tris, nu, DISP_FS)
+    return call_clu_matrix(obs_pts, tris, nu, DISP_HS)
 
 
 def strain_matrix(obs_pts, tris, nu):
-    return call_clu_matrix(obs_pts, tris, nu, STRAIN_FS)
+    return call_clu_matrix(obs_pts, tris, nu, STRAIN_HS)
 
 
 def disp_free(obs_pts, tris, slips, nu):
-    return call_clu_free(obs_pts, tris, slips, nu, DISP_FS)
+    return call_clu_free(obs_pts, tris, slips, nu, DISP_HS)
 
 
 def strain_free(obs_pts, tris, slips, nu):
-    return call_clu_free(obs_pts, tris, slips, nu, STRAIN_FS)
+    return call_clu_free(obs_pts, tris, slips, nu, STRAIN_HS)
 
 
 def disp_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu):
     return call_clu_block(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, DISP_FS
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, DISP_HS
     )
 
 
 def strain_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu):
     return call_clu_block(
-        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, STRAIN_FS
+        obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, STRAIN_HS
     )
 
 
@@ -65,7 +60,7 @@ def disp_aca(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, tol, max
         nu,
         tol,
         max_iter,
-        DISP_FS,
+        DISP_HS,
     )
 
 
@@ -82,5 +77,5 @@ def strain_aca(
         nu,
         tol,
         max_iter,
-        STRAIN_FS,
+        STRAIN_HS,
     )

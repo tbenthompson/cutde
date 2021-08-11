@@ -6,9 +6,11 @@
     <a target="_blank" href="https://github.com/tbenthompson/cutde/actions" title="Test Status"><img src="https://github.com/tbenthompson/cutde/actions/workflows/test.yml/badge.svg"></a>
 </a>
 
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+
 # Python + CUDA TDEs from Nikkhoo and Walter 2015
 
-CUDA and OpenCL-enabled fullspace triangle dislocation elements. Benchmarked at 130 million TDEs per second. Based on the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software). In addition to the basic pair-wise TDE operations for displacement and strain, `cutde` also has:
+CUDA and OpenCL-enabled fullspace and halfspace triangle dislocation elements. Benchmarked at 130 million TDEs per second. Based on the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software). In addition to the basic pair-wise TDE operations for displacement and strain, `cutde` also has:
 * all pairs matrix construction functions.
 * matrix free functions for low memory usage settings.
 * block-wise functions that are especially helpful in an FMM or hierarchical matrix setting.
@@ -139,23 +141,26 @@ To install `cutde` itself run:
 pip install cutde
 ```
 
-Then, install either PyCUDA or PyOpenCL following the directions below.
+That should be sufficient to use the C++/CPU backend. If you want to use the GPU backend via PyCUDA or PyOpenCL, follow along below.
 
-## PyCUDA
+## GPU installation
+Install either PyCUDA or PyOpenCL following the directions below.
+
+### PyCUDA
 If you have an NVIDIA GPU, install PyCUDA with:
 ```
 conda config --prepend channels conda-forge
 conda install -c conda-forge pycuda
 ```
 
-## Mac OS X
+### Mac OS X
 Install PyOpenCL and the PoCL OpenCL driver with:
 ```
 conda config --prepend channels conda-forge
 conda install pocl pyopencl
 ```
 
-## Ubuntu + PyOpenCL/PoCL
+### Ubuntu + PyOpenCL/PoCL
 
 Just like on a Mac:
 ```
@@ -164,20 +169,22 @@ conda install pocl pyopencl
 ```
 
 
-## Ubuntu + PyOpenCL with system drivers** 
+### Ubuntu + PyOpenCL with system drivers** 
 ```
 conda install pyopencl ocl-icd ocl-icd-system
 ```
 You will need to install the system OpenCL drivers yourself depending on the hardware you have. See the "Something else" section below.
 
-## Windows
+### Windows
 
-I'm not aware of anyone testing cutde on Windows yet. It should not be difficult to install. I would expect that you install pyopencl via conda and then install the OpenCL libraries and drivers that are provided by your hardware vendor. See the "Something else" section below.
+See the PyCUDA instructions if you have an NVIDIA GPU.
 
-## Something else
+I'm not aware of anyone testing cutde on the GPU on Windows yet. It should not be difficult to install. I would expect that you install `pyopencl` via conda and then install the OpenCL libraries and drivers that are provided by your hardware vendor. See the "Something else" section below.
+
+### Something else
 I'd suggest starting by trying the instructions for the system most similar to yours above. If that doesn't work, never fear! OpenCL should be installable on almost all recent hardware and typical operating systems. [These directions can be helpful.](https://documen.tician.de/pyopencl/misc.html#installing-from-conda-forge). I am happy to try to help if you have OpenCL installation issues, but I can't promise to be useful.
 
-## Why can't I use Apple CPU OpenCL?
+### Why can't I use Apple CPU OpenCL?
 
 You might have gotten the message: `cutde does not support the Apple CPU OpenCL implementation and no other platform or device was found. Please consult the cutde README.`
 
@@ -211,10 +218,11 @@ Finally, to check that `cutde` is working properly, run `pytest`!
 
 The library is extremely simple:
 * `cutde.fullspace` - the main entrypoint.
-* `fullspace.cu` - a direct translation of the original MATLAB into CUDA/OpenCL. This probably should not be modified.
+* `pairs.cu` - a direct translation of the original MATLAB into CUDA/OpenCL. This probably should not be modified.
 * `cutde.gpu` - a layer that abstracts between CUDA and OpenCL
-* `cutde.cuda` - the PyCUDA interface.
-* `cutde.opencl` - the PyOpenCL interface.
+* `cutde.cuda` - the PyCUDA backend.
+* `cutde.opencl` - the PyOpenCL backend.
+* `cutde.cpp` - the C++ CPU backend.
 
 The `tests/tde_profile.py` script is useful for assessing performance. 
 

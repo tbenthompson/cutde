@@ -5,30 +5,38 @@ import py_aca
 import pytest
 from test_tde import setup_matrix_test
 
-import cutde
+import cutde.fullspace as FS
+import cutde.halfspace as HS
 from cutde.aca import call_clu_aca
-from cutde.fullspace import DISP, STRAIN
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 @pytest.mark.parametrize("F_ordered", [True, False])
 @pytest.mark.parametrize("field", ["disp", "strain"])
-def test_aca_slow(dtype, F_ordered, field):
+@pytest.mark.parametrize("module_name", ["HS", "FS"])
+def test_aca_slow(dtype, F_ordered, field, module_name):
     # The fast version of this test doesn't test multiple blocks and would miss
     # some potential errors.
-    runner(dtype, F_ordered, field, 10, compare_against_py=True)
+    runner(dtype, F_ordered, field, module_name, 10, compare_against_py=True)
 
 
 @pytest.mark.parametrize("dtype", [np.int32, np.int64, np.float32, np.float64])
 @pytest.mark.parametrize("F_ordered", [True, False])
 @pytest.mark.parametrize("field", ["disp", "strain"])
-def test_aca_fast(dtype, F_ordered, field):
-    runner(dtype, F_ordered, field, 1, compare_against_py=False)
+@pytest.mark.parametrize("module_name", ["HS"])
+def test_aca_fast(dtype, F_ordered, field, module_name):
+    runner(dtype, F_ordered, field, module_name, 1, compare_against_py=False)
 
 
 def runner(
-    dtype, F_ordered, field, n_sets, compare_against_py=False, benchmark_iters=1
+    dtype,
+    F_ordered,
+    field,
+    module_name,
+    n_sets,
+    compare_against_py=False,
+    benchmark_iters=1,
 ):
     """
     This checks that the OpenCL/CUDA ACA implementation is producing *exactly*
@@ -36,15 +44,16 @@ def runner(
     implementations are within the expected Frobenius norm tolerance of the
     exact calculation.
     """
+    module = HS if module_name == "HS" else FS
     if field == "disp":
-        matrix_fnc = cutde.disp_matrix
-        aca_fnc = cutde.disp_aca
-        field_spec = DISP
+        matrix_fnc = module.disp_matrix
+        aca_fnc = module.disp_aca
+        field_spec = module.DISP_SPEC
         vec_dim = 3
     else:
-        matrix_fnc = cutde.strain_matrix
-        aca_fnc = cutde.strain_aca
-        field_spec = STRAIN
+        matrix_fnc = module.strain_matrix
+        aca_fnc = module.strain_aca
+        field_spec = module.STRAIN_SPEC
         vec_dim = 6
 
     pts = []

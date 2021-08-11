@@ -5,6 +5,8 @@ import warnings
 import pyopencl
 import pyopencl.array
 
+from .gpu_backend import load
+
 logger = logging.getLogger(__name__)
 
 gpu_initialized = False
@@ -88,7 +90,7 @@ def ptr(arr):
     return arr
 
 
-def to_gpu(arr, float_type):
+def to(arr, float_type):
     ensure_initialized()
     if type(arr) is pyopencl.array.Array:
         return arr
@@ -96,17 +98,17 @@ def to_gpu(arr, float_type):
     return pyopencl.array.to_device(gpu_queue, to_type)
 
 
-def zeros_gpu(shape, float_type):
+def zeros(shape, float_type):
     ensure_initialized()
     return pyopencl.array.zeros(gpu_queue, shape, float_type)
 
 
-def empty_gpu(shape, float_type):
+def empty(shape, float_type):
     ensure_initialized()
     return pyopencl.array.empty(gpu_queue, shape, float_type)
 
 
-def threaded_get(arr):
+def get(arr):
     return arr.get()
 
 
@@ -117,10 +119,12 @@ class ModuleWrapper:
     def __getattr__(self, name):
         kernel = getattr(self.module, name)
 
-        def provide_queue_wrapper(*args, grid=None, block=None, **kwargs):
+        def provide_queue_wrapper(*args):
+            grid = args[-2]
+            block = args[-1]
             global_size = [b * g for b, g in zip(grid, block)]
-            arg_ptrs = [ptr(a) for a in args]
-            return kernel(gpu_queue, global_size, block, *arg_ptrs, **kwargs)
+            arg_ptrs = [ptr(a) for a in args[:-2]]
+            return kernel(gpu_queue, global_size, block, *arg_ptrs)
 
         return provide_queue_wrapper
 
@@ -137,9 +141,27 @@ def compile(code):
     return ModuleWrapper(pyopencl.Program(gpu_ctx, code).build(options=compile_options))
 
 
-cluda_preamble = """
+def max_block_size(requested):
+    return requested
+
+
+def load_module(
+    tmpl_name, tmpl_dir=None, save_code=False, no_caching=False, tmpl_args=None
+):
+    return load(
+        "opencl",
+        preamble,
+        compile,
+        tmpl_name,
+        tmpl_dir,
+        save_code,
+        no_caching,
+        tmpl_args,
+    )
+
+
+preamble = """
 // taken from pyopencl._cluda
-#define LOCAL_BARRIER barrier(CLK_LOCAL_MEM_FENCE)
 // 'static' helps to avoid the "no previous prototype for function" warning
 #if __OPENCL_VERSION__ >= 120
 #define WITHIN_KERNEL static
