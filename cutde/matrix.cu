@@ -1,7 +1,7 @@
 <%namespace module="cutde.mako_helpers" import="*"/>
 <%namespace name="common" file="common.cu"/>
 
-${common.defs()}
+${common.defs(preamble, float_type)}
 
 <%def name="matrix(name, evaluator, vec_dim)">
 KERNEL

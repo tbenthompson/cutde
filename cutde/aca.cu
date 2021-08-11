@@ -1,14 +1,17 @@
 <%namespace module="cutde.mako_helpers" import="*"/>
 <%namespace name="common" file="common.cu"/>
 
-${common.defs()}
+${common.defs(preamble, float_type)}
 
 WITHIN_KERNEL 
 int buffer_alloc(GLOBAL_MEM int* next_ptr, int n_values) {
-    % if cluda_backend == 'cuda':
+    % if backend == 'cuda':
         int out = atomicAdd(next_ptr, n_values);
-    % else:
+    % elif backend == 'opencl':
         int out = atomic_add(next_ptr, n_values);
+    % else:
+        #pragma omp atomic capture
+        int out = next_ptr = next_ptr + n_values;
     % endif
     return out;
 }

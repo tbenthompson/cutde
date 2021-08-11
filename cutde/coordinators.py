@@ -4,7 +4,7 @@ from math import ceil
 
 import numpy as np
 
-import cutde.gpu as cluda
+import cutde.backend as backend
 
 source_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -49,7 +49,7 @@ def solve_types(obs_pts, tris, slips):
 
             # If we're using OpenCL, we need to check if float64 is allowed.
             # If not, convert to float32.
-            if cluda.ocl_backend:
+            if backend.which_backend == "opencl":
                 import cutde.opencl
 
                 cutde.opencl.ensure_initialized()
@@ -125,13 +125,15 @@ def call_clu(obs_pts, tris, slips, nu, fnc):
     n = obs_pts.shape[0]
     block_size = 128
     n_blocks = int(np.ceil(n / block_size))
-    gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
-    module = cluda.load_gpu("pairs.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    gpu_config = dict(
+        block_size=block_size, float_type=backend.np_to_c_type(float_type)
+    )
+    module = backend.load_gpu("pairs.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = cluda.empty_gpu(n * vec_dim, float_type)
-    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
-    gpu_tris = cluda.to_gpu(tris, float_type)
-    gpu_slips = cluda.to_gpu(slips, float_type)
+    gpu_results = backend.empty_gpu(n * vec_dim, float_type)
+    gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
+    gpu_tris = backend.to_gpu(tris, float_type)
+    gpu_slips = backend.to_gpu(slips, float_type)
 
     getattr(module, "pairs_" + fnc_name)(
         gpu_results,
@@ -157,12 +159,14 @@ def call_clu_matrix(obs_pts, tris, nu, fnc):
     block_size = 16
     n_obs_blocks = int(np.ceil(n_obs / block_size))
     n_src_blocks = int(np.ceil(n_src / block_size))
-    gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
-    module = cluda.load_gpu("matrix.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    gpu_config = dict(
+        block_size=block_size, float_type=backend.np_to_c_type(float_type)
+    )
+    module = backend.load_gpu("matrix.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = cluda.empty_gpu(n_obs * vec_dim * n_src * 3, float_type)
-    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
-    gpu_tris = cluda.to_gpu(tris, float_type)
+    gpu_results = backend.empty_gpu(n_obs * vec_dim * n_src * 3, float_type)
+    gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
+    gpu_tris = backend.to_gpu(tris, float_type)
 
     getattr(module, "matrix_" + fnc_name)(
         gpu_results,
@@ -187,14 +191,16 @@ def call_clu_free(obs_pts, tris, slips, nu, fnc):
     n_src = tris.shape[0]
     block_size = 256
 
-    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
-    gpu_tris = cluda.to_gpu(tris, float_type)
-    gpu_slips = cluda.to_gpu(slips, float_type)
-    gpu_results = cluda.zeros_gpu(n_obs * vec_dim, float_type)
+    gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
+    gpu_tris = backend.to_gpu(tris, float_type)
+    gpu_slips = backend.to_gpu(slips, float_type)
+    gpu_results = backend.zeros_gpu(n_obs * vec_dim, float_type)
 
     n_obs_blocks = int(np.ceil(n_obs / block_size))
-    gpu_config = dict(block_size=block_size, float_type=cluda.np_to_c_type(float_type))
-    module = cluda.load_gpu("free.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    gpu_config = dict(
+        block_size=block_size, float_type=backend.np_to_c_type(float_type)
+    )
+    module = backend.load_gpu("free.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
     # Split up the sources into chunks so that we don't completely overwhelm a
     # single GPU machine and cause the screen to lock up.
@@ -263,17 +269,17 @@ def call_clu_block(obs_pts, tris, obs_start, obs_end, src_start, src_end, nu, fn
 
     n_blocks = obs_end.shape[0]
     team_size = 16
-    gpu_config = dict(float_type=cluda.np_to_c_type(float_type))
-    module = cluda.load_gpu("blocks.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
+    gpu_config = dict(float_type=backend.np_to_c_type(float_type))
+    module = backend.load_gpu("blocks.cu", tmpl_args=gpu_config, tmpl_dir=source_dir)
 
-    gpu_results = cluda.zeros_gpu(block_end[-1], float_type)
-    gpu_obs_pts = cluda.to_gpu(obs_pts, float_type)
-    gpu_tris = cluda.to_gpu(tris, float_type)
-    gpu_obs_start = cluda.to_gpu(obs_start, np.int32)
-    gpu_obs_end = cluda.to_gpu(obs_end, np.int32)
-    gpu_src_start = cluda.to_gpu(src_start, np.int32)
-    gpu_src_end = cluda.to_gpu(src_end, np.int32)
-    gpu_block_start = cluda.to_gpu(block_start, np.int32)
+    gpu_results = backend.zeros_gpu(block_end[-1], float_type)
+    gpu_obs_pts = backend.to_gpu(obs_pts, float_type)
+    gpu_tris = backend.to_gpu(tris, float_type)
+    gpu_obs_start = backend.to_gpu(obs_start, np.int32)
+    gpu_obs_end = backend.to_gpu(obs_end, np.int32)
+    gpu_src_start = backend.to_gpu(src_start, np.int32)
+    gpu_src_end = backend.to_gpu(src_end, np.int32)
+    gpu_block_start = backend.to_gpu(block_start, np.int32)
 
     getattr(module, "blocks_" + fnc_name)(
         gpu_results,

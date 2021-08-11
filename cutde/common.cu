@@ -19,9 +19,9 @@ WITHIN_KERNEL Real${dim} ${name}${dim}(Real${dim} a, ${b_type} b) {
 }
 </%def>
 
-<%def name="defs(cluda_preamble, float_type)">
+<%def name="defs(preamble, float_type)">
 
-${cluda_preamble}
+${preamble}
 
 <%
 import numpy as np
@@ -715,10 +715,12 @@ WITHIN_KERNEL Real6 AngSetupFSC_S(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Rea
 <%def name="disp_hs(tri_prefix)">
     Real3 summed_terms;
     {
+        // Main dislocation
         ${disp_fs(tri_prefix)}
 
         summed_terms = full_out;
 
+        // Harmonic free surface correction
         Real3 efcs_slip = inv_transform3(Vnorm, Vstrike, Vdip, slip);
         Real3 uvw0 = AngSetupFSC(obs, efcs_slip, ${tri_prefix}0, ${tri_prefix}1, nu);
         Real3 uvw1 = AngSetupFSC(obs, efcs_slip, ${tri_prefix}1, ${tri_prefix}2, nu);
@@ -736,6 +738,7 @@ WITHIN_KERNEL Real6 AngSetupFSC_S(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Rea
         image_tri1.z *= -1;
         image_tri2.z *= -1;
 
+        // Image dislocation
         ${disp_fs("image_tri")}
 
         summed_terms = add3(summed_terms, full_out);
@@ -746,10 +749,12 @@ WITHIN_KERNEL Real6 AngSetupFSC_S(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Rea
 <%def name="strain_hs(tri_prefix)">
     Real6 summed_terms;
     {
+        // Main dislocation
         ${strain_fs(tri_prefix)}
 
         summed_terms = full_out;
 
+        // Harmonic free surface correction
         Real3 efcs_slip = inv_transform3(Vnorm, Vstrike, Vdip, slip);
         Real6 uvw0 = AngSetupFSC_S(obs, efcs_slip, ${tri_prefix}0, ${tri_prefix}1, nu);
         Real6 uvw1 = AngSetupFSC_S(obs, efcs_slip, ${tri_prefix}1, ${tri_prefix}2, nu);
@@ -767,6 +772,7 @@ WITHIN_KERNEL Real6 AngSetupFSC_S(Real3 obs, Real3 slip, Real3 PA, Real3 PB, Rea
         image_tri1.z *= -1;
         image_tri2.z *= -1;
 
+        // Image dislocation
         ${strain_fs("image_tri")}
 
         summed_terms = add6(summed_terms, full_out);

@@ -1,65 +1,11 @@
-# noqa: F401
-
 import logging
 import os
 
 import numpy as np
 
-cuda_backend = False
-ocl_backend = False
-try:
-    if "CUTDE_USE_OPENCL" in os.environ:
-        # Pop over to using OpenCL even if CUDA is available.
-        # This can be helpful for testing purposes when it might be nice to run
-        # with OpenCL even if CUDA is installed.
-        raise ImportError
-
-    from .cuda import (
-        cluda_preamble,
-        compile,
-        empty_gpu,
-        threaded_get,
-        to_gpu,
-        zeros_gpu,
-    )
-
-    cuda_backend = True
-except ImportError:
-    from .opencl import (  # noqa: F401
-        cluda_preamble,
-        compile,
-        empty_gpu,
-        threaded_get,
-        to_gpu,
-        zeros_gpu,
-    )
-
-    ocl_backend = True
-
-cluda_backend = "cuda" if cuda_backend else "opencl"
-
 logger = logging.getLogger(__name__)
 
 gpu_module = dict()
-
-
-def np_to_c_type(t):
-    if t == np.float32:
-        return "float"
-    elif t == np.float64:
-        return "double"
-
-
-def intervals(length, step_size):
-    out = []
-    next_start = 0
-    next_end = step_size
-    while next_end < length + step_size:
-        this_end = min(next_end, length)
-        out.append((next_start, this_end))
-        next_start += step_size
-        next_end += step_size
-    return out
 
 
 def compare(a, b):
@@ -108,11 +54,9 @@ def get_template(tmpl_name, tmpl_dir):
     return lookup.get_template(tmpl_name)
 
 
-def template_with_mako(tmpl, tmpl_args):
+def template_with_mako(backend, preamble, tmpl, tmpl_args):
     try:
-        return tmpl.render(
-            **tmpl_args, cluda_backend=cluda_backend, cluda_preamble=cluda_preamble
-        )
+        return tmpl.render(**tmpl_args, backend=backend, preamble=preamble)
     except:  # noqa: E722
         # bare except is okay because we re-raise immediately
         import mako.exceptions
@@ -121,8 +65,15 @@ def template_with_mako(tmpl, tmpl_args):
         raise
 
 
-def load_gpu(
-    tmpl_name, tmpl_dir=None, save_code=False, no_caching=False, tmpl_args=None
+def load(
+    backend,
+    preamble,
+    compiler,
+    tmpl_name,
+    tmpl_dir=None,
+    save_code=False,
+    no_caching=False,
+    tmpl_args=None,
 ):
     if tmpl_args is None:
         tmpl_args = dict()
@@ -137,7 +88,7 @@ def load_gpu(
     if tmpl_args is None:
         tmpl_args = dict()
 
-    code = template_with_mako(tmpl, tmpl_args)
+    code = template_with_mako(backend, preamble, tmpl, tmpl_args)
     rendered_fp = os.path.join(tmpl_dir, tmpl_name + ".rendered")
     with open(rendered_fp, "w") as f:
         f.write("\n")
@@ -147,7 +98,7 @@ def load_gpu(
 
     module_info = dict()
     module_info["tmpl_args"] = tmpl_args
-    module_info["module"] = compile(code)
+    module_info["module"] = compiler(code)
 
     gpu_module[tmpl_name] = gpu_module.get(tmpl_name, []) + [module_info]
     return module_info["module"]

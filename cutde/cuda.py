@@ -4,6 +4,8 @@ import pycuda
 import pycuda.compiler
 import pycuda.gpuarray
 
+from .gpu_backend import load
+
 logger = logging.getLogger(__name__)
 
 cuda_initialized = False
@@ -57,13 +59,6 @@ class CUDAContextWrapper(object):
         self.ctx.pop()
 
 
-def threaded_get(arr):
-    import pycuda.autoinit
-
-    with CUDAContextWrapper(pycuda.autoinit.context):
-        return arr.get()
-
-
 class ModuleWrapper:
     def __init__(self, module):
         self.module = module
@@ -84,7 +79,15 @@ def compile(code):
     return ModuleWrapper(pycuda.compiler.SourceModule(code, options=compiler_args))
 
 
-cluda_preamble = """
+def load_gpu(
+    tmpl_name, tmpl_dir=None, save_code=False, no_caching=False, tmpl_args=None
+):
+    return load(
+        "cuda", preamble, compile, tmpl_name, tmpl_dir, save_code, no_caching, tmpl_args
+    )
+
+
+preamble = """
 #include <stdio.h>
 #define CUDA
 // taken from pycuda._cluda

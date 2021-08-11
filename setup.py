@@ -1,12 +1,31 @@
+# from pybind11.setup_helpers import Pybind11Extension
 from setuptools import setup
+
+from cutde.gpu import get_template, template_with_mako
 
 version = open("VERSION").read()
 
 description = open("README.md").read()
 
+tmpl_dir = "cutde"
+tmpl_name = "pairs.cu"
+tmpl_args = dict(float_type="double")
+
+tmpl = get_template(tmpl_name, tmpl_dir)
+code = template_with_mako(tmpl, tmpl_args)
+# write to temp file
+
+ext_modules = [
+    # Pybind11Extension(
+    #     "python_example",
+    #     sorted(glob("src/*.cpp")),  # Sort source files for reproducibility
+    # ),
+]
+
 setup(
     packages=["cutde"],
     install_requires=[],
+    ext_modules=ext_modules,
     zip_safe=False,
     include_package_data=True,
     name="cutde",

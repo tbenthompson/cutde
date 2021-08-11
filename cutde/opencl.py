@@ -5,6 +5,8 @@ import warnings
 import pyopencl
 import pyopencl.array
 
+from .gpu_backend import load
+
 logger = logging.getLogger(__name__)
 
 gpu_initialized = False
@@ -106,10 +108,6 @@ def empty_gpu(shape, float_type):
     return pyopencl.array.empty(gpu_queue, shape, float_type)
 
 
-def threaded_get(arr):
-    return arr.get()
-
-
 class ModuleWrapper:
     def __init__(self, module):
         self.module = module
@@ -137,7 +135,22 @@ def compile(code):
     return ModuleWrapper(pyopencl.Program(gpu_ctx, code).build(options=compile_options))
 
 
-cluda_preamble = """
+def load_gpu(
+    tmpl_name, tmpl_dir=None, save_code=False, no_caching=False, tmpl_args=None
+):
+    return load(
+        "opencl",
+        preamble,
+        compile,
+        tmpl_name,
+        tmpl_dir,
+        save_code,
+        no_caching,
+        tmpl_args,
+    )
+
+
+preamble = """
 // taken from pyopencl._cluda
 #define LOCAL_BARRIER barrier(CLK_LOCAL_MEM_FENCE)
 // 'static' helps to avoid the "no previous prototype for function" warning
