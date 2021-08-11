@@ -1,0 +1,52 @@
+{% set data = load_setup_py_data() %}
+
+package:
+  name: quantcore.glm
+  version: {{ data.get('version') }}
+
+source:
+  url: ../
+
+build:
+  number: 0
+  noarch: python
+  script: python -m pip install --no-deps --ignore-installed .
+  skip: True # [py<37]
+  skip: True # [win]
+
+requirements:
+  build:
+    - python
+    - cross-python_{{ target_platform }}
+    - numpy
+    - {{ compiler("c") }}
+    - {{ compiler("cxx") }}
+    - llvm-openmp  # [osx]
+
+  host:
+    - python
+    - numpy
+    - pip
+    - llvm-openmp  # [osx]
+
+  run:
+    - python
+    - {{ pin_compatible('numpy') }}
+
+test:
+  imports:
+    - cutde
+  requires:
+    - pip
+  commands:
+    - pip check
+
+about:
+  home: https://github.com/tbenthompson/cutde
+  license: MIT
+  license_file: LICENSE
+  summary: {{ data.get('description') }}
+
+extra:
+  recipe-maintainers:
+    - tbenthompson
