@@ -10,6 +10,9 @@ from .coordinators import (
 from .geometry import strain_to_stress  # noqa: F401
 from .TDdispFS import TDdispFS
 
+DISP_SPEC = DISP_FS
+STRAIN_SPEC = STRAIN_FS
+
 
 def py_disp(obs_pt, tri, slip, nu):
     return TDdispFS(obs_pt, tri, slip, nu)

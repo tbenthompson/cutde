@@ -6,6 +6,8 @@
     <a target="_blank" href="https://github.com/tbenthompson/cutde/actions" title="Test Status"><img src="https://github.com/tbenthompson/cutde/actions/workflows/test.yml/badge.svg"></a>
 </a>
 
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+
 # Python + CUDA TDEs from Nikkhoo and Walter 2015
 
 CUDA and OpenCL-enabled fullspace and halfspace triangle dislocation elements. Benchmarked at 130 million TDEs per second. Based on the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software). In addition to the basic pair-wise TDE operations for displacement and strain, `cutde` also has:

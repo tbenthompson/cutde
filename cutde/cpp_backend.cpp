@@ -70,6 +70,7 @@ namespace py = pybind11;
 <%include file="blocks.cu"/>
 <%include file="matrix.cu"/>
 <%include file="free.cu"/>
+<%include file="aca.cu"/>
 
 template <typename T>
 T conv_arg(T arg) {
@@ -128,7 +129,7 @@ decltype(auto) wrapper(R(*fn)(Args...))
 }
 
 PYBIND11_MODULE(cpp_backend_${float_type}, m) {
-    % for type in ["pairs", "blocks", "matrix", "free"]:
+    % for type in ["pairs", "blocks", "matrix", "free", "aca"]:
         % for field in ["disp", "strain"]:
             % for space in ["fs", "hs"]:
                 <%

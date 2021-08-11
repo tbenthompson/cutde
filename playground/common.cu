@@ -1,1 +1,0 @@
-/home/tbent/active/eq/cutde/cutde/common.cu

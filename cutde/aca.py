@@ -160,14 +160,14 @@ def call_clu_aca(
             gpu_tol,
             gpu_max_iter,
             float_type(nu),
-            grid=(chunk_size, 1, 1),
-            block=(team_size, 1, 1),
+            (chunk_size, 1, 1),
+            (team_size, 1, 1),
         )
 
         # post-process the buffer to collect the U, V vectors
-        buffer = gpu_buffer.get()
-        uv_ptrs = gpu_uv_ptrs.get()
-        n_terms = gpu_n_terms.get()
+        buffer = backend.get(gpu_buffer)
+        uv_ptrs = backend.get(gpu_uv_ptrs)
+        n_terms = backend.get(gpu_n_terms)
         for i in range(chunk_size):
             us = []
             vs = []

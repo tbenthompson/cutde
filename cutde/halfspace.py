@@ -9,6 +9,9 @@ from .coordinators import (
 )
 from .geometry import strain_to_stress  # noqa: F401
 
+DISP_SPEC = DISP_HS
+STRAIN_SPEC = STRAIN_HS
+
 
 def disp(obs_pts, tris, slips, nu):
     return call_clu(obs_pts, tris, slips, nu, DISP_HS)

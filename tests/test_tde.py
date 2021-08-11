@@ -149,6 +149,10 @@ def setup_matrix_test(dtype, F_ordered, n_obs=10, n_src=10, seed=10):
     pts = random_vals((n_obs, 3), max_val=100)
     tris = random_vals((n_src, 3, 3), max_val=100)
     slips = random_vals((n_src, 3), max_val=100)
+    # Push the pts and triangles below the free surface. This doesn't matter
+    # for fullspace tests but is very important for the halfspace tests.
+    pts[:, 2] -= np.max(pts[:, 2]) + 1
+    tris[:, :, 2] -= np.max(tris[:, :, 2]) + 1
 
     return pts, tris, slips
 

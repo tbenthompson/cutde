@@ -9,7 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 def to(arr, float_type):
-    return arr.ravel().astype(float_type)
+    out = arr.ravel().astype(float_type)
+    if out is arr:
+        __import__("ipdb").set_trace()
+        return out.copy()
+    else:
+        return out
 
 
 def zeros(shape, float_type):

@@ -5,13 +5,17 @@ ${common.defs(preamble, float_type)}
 
 WITHIN_KERNEL 
 int buffer_alloc(GLOBAL_MEM int* next_ptr, int n_values) {
+    int out;
     % if backend == 'cuda':
-        int out = atomicAdd(next_ptr, n_values);
+        out = atomicAdd(next_ptr, n_values);
     % elif backend == 'opencl':
-        int out = atomic_add(next_ptr, n_values);
+        out = atomic_add(next_ptr, n_values);
     % else:
-        #pragma omp atomic capture
-        int out = next_ptr = next_ptr + n_values;
+        #pragma omp critical 
+        {
+            out = *next_ptr;
+            *next_ptr += n_values;
+        }
     % endif
     return out;
 }
@@ -260,11 +264,12 @@ void aca_${name}(
     // outermost scope of a function. Otherwise this would be defined next to
     // the single-threaded section that uses it.
     LOCAL_MEM bool done[1];
+    done[0] = true;
 
     Real frob_est = 0;
     int k = 0;
     for (; k < max_iter; k++) {
-        ${LOCAL_BARRIER()}
+        ${common.LOCAL_BARRIER()}
         % if verbose:
             printf("\n\nstart iteration %i\n", k);
             for (int i = 0; i < 5; i++) {
@@ -293,9 +298,9 @@ void aca_${name}(
                 obs_pts, tris, os, oe, ss, se, nu,
                 team_idx, team_size
             );
-            LOCAL_BARRIER;
+            ${common.LOCAL_BARRIER()}
             ${sub_residual("RIstar", "Istar", "Istar + 1", "k", "rows", vec_dim)}
-            LOCAL_BARRIER;
+            ${common.LOCAL_BARRIER()}
 
             Jstar_entry = argmax_abs_not_in_list_cols(RIstar, 1, n_cols, prevJstar, k);
             Jstar = Jstar_entry.col;
@@ -305,7 +310,7 @@ void aca_${name}(
                 obs_pts, tris, os, oe, ss, se, nu,
                 team_idx, team_size
             );
-            LOCAL_BARRIER;
+            ${common.LOCAL_BARRIER()}
             ${sub_residual("RJstar", "Jstar", "Jstar + 1", "k", "cols", vec_dim)}
         } else {
             calc_cols_${name}(
@@ -313,9 +318,9 @@ void aca_${name}(
                 obs_pts, tris, os, oe, ss, se, nu,
                 team_idx, team_size
             );
-            LOCAL_BARRIER;
+            ${common.LOCAL_BARRIER()}
             ${sub_residual("RJstar", "Jstar", "Jstar + 1", "k", "cols", vec_dim)}
-            LOCAL_BARRIER;
+            ${common.LOCAL_BARRIER()}
 
 
             Istar_entry = argmax_abs_not_in_list_rows(RJstar, n_rows, 1, prevIstar, k);
@@ -326,10 +331,10 @@ void aca_${name}(
                 obs_pts, tris, os, oe, ss, se, nu,
                 team_idx, team_size
             );
-            LOCAL_BARRIER;
+            ${common.LOCAL_BARRIER()}
             ${sub_residual("RIstar", "Istar", "Istar + 1", "k", "rows", vec_dim)}
         }
-        LOCAL_BARRIER;
+        ${common.LOCAL_BARRIER()}
 
         // claim a block of space for the first U and first V vectors and collect
         // the corresponding Real* pointers
@@ -387,7 +392,7 @@ void aca_${name}(
                 done[0] = true;
             }
         }
-        LOCAL_BARRIER;
+        ${common.LOCAL_BARRIER()}
 
         if (done[0]) {
             break;
@@ -409,7 +414,7 @@ void aca_${name}(
                 obs_pts, tris, os, oe, ss, se, nu,
                 team_idx, team_size
             );
-            LOCAL_BARRIER;
+            ${common.LOCAL_BARRIER()}
             ${sub_residual("RIref", "Iref", "Iref + " + str(vec_dim), "k + 1", "rows", vec_dim)}
         } else {
             GLOBAL_MEM Real* next_buffer_u = &buffer[uv_ptrs[uv_ptr0 + k]];
@@ -437,7 +442,7 @@ void aca_${name}(
                 obs_pts, tris, os, oe, ss, se, nu,
                 team_idx, team_size
             );
-            LOCAL_BARRIER;
+            ${common.LOCAL_BARRIER()}
             ${sub_residual("RJref", "Jref", "Jref + 3", "k + 1", "cols", vec_dim)}
         } else {
             GLOBAL_MEM Real* next_buffer_u = &buffer[uv_ptrs[uv_ptr0 + k]];
