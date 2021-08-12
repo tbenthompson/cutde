@@ -1,11 +1,13 @@
-{% set data = load_setup_py_data() %}
+{% set version = "21.8.11" %}
+{% set name = "cutde" %}
 
 package:
-  name: quantcore.glm
-  version: {{ data.get('version') }}
+  name: {{ name|lower }}
+  version: {{ version }}
 
 source:
-  url: ../
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/cutde-{{ version }}.tar.gz
+  sha256: c3ccf16c62580a941e4fee2e753748f164fa154dc835d0b0bb94de0d61829a11
 
 build:
   number: 0
@@ -17,11 +19,12 @@ build:
 requirements:
   build:
     - python
-    - cross-python_{{ target_platform }}
     - numpy
     - {{ compiler("c") }}
     - {{ compiler("cxx") }}
     - llvm-openmp  # [osx]
+    - pybind11
+    - mako
 
   host:
     - python
@@ -32,20 +35,22 @@ requirements:
   run:
     - python
     - {{ pin_compatible('numpy') }}
+    - pyproj
+    - mako
 
 test:
   imports:
     - cutde
-  requires:
-    - pip
   commands:
     - pip check
+  requires:
+    - pip
 
 about:
   home: https://github.com/tbenthompson/cutde
+  summary: 130 million TDEs per second, Python + CUDA TDEs from Nikkhoo and Walter 2015
   license: MIT
   license_file: LICENSE
-  summary: {{ data.get('description') }}
 
 extra:
   recipe-maintainers:

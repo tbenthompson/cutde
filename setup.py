@@ -7,6 +7,8 @@ version = open("VERSION").read()
 
 description = open("README.md").read()
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
 for float_type in ["float", "double"]:
     tmpl_args = dict(float_type=float_type)
 
@@ -15,6 +17,8 @@ for float_type in ["float", "double"]:
     tmpl_fp = "cutde/cpp_backend.cpp"
     tmpl_name = os.path.basename(tmpl_fp)
     lookup = mako.lookup.TemplateLookup(directories=["cutde"])
+    print(os.getcwd())
+    __import__("ipdb").set_trace()
     tmpl = lookup.get_template(tmpl_name)
     try:
         rendered_tmpl = tmpl.render(**tmpl_args, backend="cpp", preamble="")
