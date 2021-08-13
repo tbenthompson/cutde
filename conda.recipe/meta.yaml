@@ -6,16 +6,13 @@ package:
   version: {{ version }}
 
 source:
-  # url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/cutde-{{ version }}.tar.gz
-  git_url: ../
-  # sha256: c3ccf16c62580a941e4fee2e753748f164fa154dc835d0b0bb94de0d61829a11
+  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/cutde-{{ version }}.tar.gz
+  sha256: c3ccf16c62580a941e4fee2e753748f164fa154dc835d0b0bb94de0d61829a11
 
 build:
   number: 0
-  noarch: python
-  script: python -m pip install --no-deps --ignore-installed .
+  script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv "
   skip: True # [py<37]
-  skip: True # [win]
 
 requirements:
   build:
@@ -32,11 +29,14 @@ requirements:
     - numpy
     - pip
     - llvm-openmp  # [osx]
+    - pybind11
+    - mako
 
   run:
     - python
     - {{ pin_compatible('numpy') }}
     - pyproj
+    - pybind11
     - mako
 
 test:

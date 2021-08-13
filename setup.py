@@ -1,7 +1,7 @@
 import os
 
 from pybind11.setup_helpers import Pybind11Extension
-from setuptools import setup
+from setuptools import find_packages, setup
 
 version = open("VERSION").read()
 
@@ -44,7 +44,7 @@ ext_modules = [
 ]
 
 setup(
-    packages=["cutde"],
+    packages=find_packages(),
     install_requires=["mako", "pybind11"],
     ext_modules=ext_modules,
     zip_safe=False,
