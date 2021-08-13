@@ -17,8 +17,6 @@ for float_type in ["float", "double"]:
     tmpl_fp = "cutde/cpp_backend.cpp"
     tmpl_name = os.path.basename(tmpl_fp)
     lookup = mako.lookup.TemplateLookup(directories=["cutde"])
-    print(os.getcwd())
-    __import__("ipdb").set_trace()
     tmpl = lookup.get_template(tmpl_name)
     try:
         rendered_tmpl = tmpl.render(**tmpl_args, backend="cpp", preamble="")

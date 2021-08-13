@@ -6,8 +6,9 @@ package:
   version: {{ version }}
 
 source:
-  url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/cutde-{{ version }}.tar.gz
-  sha256: c3ccf16c62580a941e4fee2e753748f164fa154dc835d0b0bb94de0d61829a11
+  # url: https://pypi.io/packages/source/{{ name[0] }}/{{ name }}/cutde-{{ version }}.tar.gz
+  git_url: ../
+  # sha256: c3ccf16c62580a941e4fee2e753748f164fa154dc835d0b0bb94de0d61829a11
 
 build:
   number: 0
