@@ -1,6 +1,6 @@
 {% set name = "cutde" %}
 {% set version = "21.8.13" %}
-{% set sha = "e39a3d1db213dd1a047226625dea2558d7ebb53401a1a2aeb31d6c9f57a00b5b" %}
+{% set sha = "b804249cf138946c110abb7bb93e5557ae457c45eb66d1e0660ecdd5664aec94" %}
 
 package:
   name: {{ name|lower }}
