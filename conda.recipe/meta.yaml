@@ -13,7 +13,7 @@ source:
 build:
   number: 0
   script: "{{ PYTHON }} -m pip install . --no-deps --ignore-installed -vv "
-  skip: True # [py<37]
+  skip: True  # [py<37]
 
 requirements:
   build:
@@ -22,6 +22,7 @@ requirements:
     - {{ compiler("c") }}
     - {{ compiler("cxx") }}
     - llvm-openmp  # [osx]
+    - _openmp_mutex  # [not osx]
     - pybind11
     - mako
 
@@ -30,6 +31,7 @@ requirements:
     - numpy
     - pip
     - llvm-openmp  # [osx]
+    - _openmp_mutex  # [not osx]
     - pybind11
     - mako
 
@@ -37,16 +39,16 @@ requirements:
     - python
     - {{ pin_compatible('numpy') }}
     - pyproj
-    - pybind11
-    - mako
+    - llvm-openmp  # [osx]
+    - _openmp_mutex  # [not osx]
 
 test:
   imports:
     - cutde
-  commands:
-    - pip check
   requires:
     - pip
+  commands:
+    - pip check
 
 about:
   home: https://github.com/tbenthompson/cutde
