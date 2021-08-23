@@ -9,7 +9,9 @@
 #define KERNEL
 #define GLOBAL_MEM
 #define LOCAL_MEM
+#ifndef _MSC_VER
 #define SIZE_T unsigned int
+#endif
 
 using std::min;
 
