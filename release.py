@@ -33,7 +33,7 @@ sha256 = raw_sha256.decode("ascii").strip()
 run(
     [
         f"sed -i 's/version = \"[0-9.]\+/version = \"{version_str}/'"
-        "conda.recipe/meta.yaml"
+        " conda.recipe/meta.yaml"
     ]
 )
 run([f"sed -i 's/sha256: [a-z0-9]\+/sha256: {sha256}/' conda.recipe/meta.yaml"])

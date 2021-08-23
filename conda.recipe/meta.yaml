@@ -1,5 +1,5 @@
 {% set name = "cutde" %}
-{% set version = "21.8.20" %}
+{% set version = "21.8.22" %}
 
 package:
   name: {{ name|lower }}
