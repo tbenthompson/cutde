@@ -97,8 +97,8 @@ decltype(auto) wrapper(R(*fn)(Args...))
         auto ptr_args = std::make_tuple(conv_arg(args)...);
 
         #pragma omp parallel for
-        for (SIZE_T i = 0; i < Ngrid; i++) {
-            SIZE_T i_r = i;
+        for (long i = 0; i < Ngrid; i++) {
+            long i_r = i;
             blockIdx.z = i_r % gridDim.z;
             i_r /= gridDim.z;
             blockIdx.y = i_r % gridDim.y;
