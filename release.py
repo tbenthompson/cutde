@@ -36,7 +36,7 @@ run(
         "conda.recipe/meta.yaml"
     ]
 )
-run([f"sed -i 's/sha = \"[a-z0-9]\+/sha = \"{sha256}/' conda.recipe/meta.yaml"])
+run([f"sed -i 's/sha256: [a-z0-9]\+/sha256: {sha256}/' conda.recipe/meta.yaml"])
 
 # Upload to pypi
 run(["twine", "upload", "dist/*"])

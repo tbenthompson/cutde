@@ -1,6 +1,6 @@
 import os
 
-from pybind11.setup_helpers import Pybind11Extension
+from pybind11.setup_helpers import STD_TMPL, WIN, Pybind11Extension
 from setuptools import find_packages, setup
 
 version = open("VERSION").read()
@@ -33,12 +33,14 @@ for float_type in ["float", "double"]:
     with open(rendered_fp, "w") as f:
         f.write(rendered_tmpl)
 
+OPENMP_FLAG = "/openmp" if WIN else "-fopenmp"
+
 ext_modules = [
     Pybind11Extension(
         f"cutde.cpp_backend_{float_type}",
         [f"cutde/.rendered.{float_type}.cpp_backend.cpp"],
-        extra_compile_args=["-fopenmp", "-std=c++17"],
-        extra_link_args=["-fopenmp"],
+        extra_compile_args=[OPENMP_FLAG, STD_TMPL.format("17")],
+        extra_link_args=[] if WIN else [OPENMP_FLAG],
     )
     for float_type in ["float", "double"]
 ]
