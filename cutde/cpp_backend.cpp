@@ -9,22 +9,21 @@
 #define KERNEL
 #define GLOBAL_MEM
 #define LOCAL_MEM
-#define SIZE_T unsigned int
 
 using std::min;
 
 struct XYZ {
-    SIZE_T x;
-    SIZE_T y;
-    SIZE_T z;
+    int x;
+    int y;
+    int z;
 };
 
 thread_local XYZ blockIdx;
 XYZ gridDim;
 
-WITHIN_KERNEL SIZE_T get_local_id(unsigned int dim) { return 0; }
+WITHIN_KERNEL int get_local_id(unsigned int dim) { return 0; }
 
-WITHIN_KERNEL SIZE_T get_group_id(unsigned int dim)
+WITHIN_KERNEL int get_group_id(unsigned int dim)
 {
     if(dim == 0) return blockIdx.x;
     if(dim == 1) return blockIdx.y;
@@ -32,20 +31,20 @@ WITHIN_KERNEL SIZE_T get_group_id(unsigned int dim)
     return 0;
 }
 
-WITHIN_KERNEL SIZE_T get_local_size(unsigned int dim) { return 1; }
+WITHIN_KERNEL int get_local_size(unsigned int dim) { return 1; }
 
-WITHIN_KERNEL SIZE_T get_num_groups(unsigned int dim)
+WITHIN_KERNEL int get_num_groups(unsigned int dim)
 {
     if(dim == 0) return gridDim.x;
     if(dim == 1) return gridDim.y;
     if(dim == 2) return gridDim.z;
     return 1;
 }
-WITHIN_KERNEL SIZE_T get_global_size(unsigned int dim)
+WITHIN_KERNEL int get_global_size(unsigned int dim)
 {
     return get_num_groups(dim);
 }
-WITHIN_KERNEL SIZE_T get_global_id(unsigned int dim)
+WITHIN_KERNEL int get_global_id(unsigned int dim)
 {
     return get_group_id(dim);
 }
@@ -86,19 +85,19 @@ template <typename R, typename ...Args>
 decltype(auto) wrapper(R(*fn)(Args...))
 {
     return [=](typename pyarg_from_cpparg<Args>::PyArgType... args, 
-             std::tuple<SIZE_T,SIZE_T,SIZE_T> grid,
-             std::tuple<SIZE_T,SIZE_T,SIZE_T> block) 
+             std::tuple<int,int,int> grid,
+             std::tuple<int,int,int> block) 
     {
         gridDim = {std::get<0>(grid), std::get<1>(grid), std::get<2>(grid)};
         blockIdx = {0,0,0};
 
-        SIZE_T Ngrid = gridDim.x * gridDim.y * gridDim.z;
+        int Ngrid = gridDim.x * gridDim.y * gridDim.z;
 
         auto ptr_args = std::make_tuple(conv_arg(args)...);
 
         #pragma omp parallel for
-        for (SIZE_T i = 0; i < Ngrid; i++) {
-            SIZE_T i_r = i;
+        for (long i = 0; i < Ngrid; i++) {
+            long i_r = i;
             blockIdx.z = i_r % gridDim.z;
             i_r /= gridDim.z;
             blockIdx.y = i_r % gridDim.y;
