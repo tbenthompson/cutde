@@ -8,15 +8,16 @@
 
 <!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
 
-# Python + CUDA TDEs from Nikkhoo and Walter 2015
+#  Python CPU and GPU accelerated TDEs, over 100 million TDEs per second! 
 
-**cutde**: CUDA, OpenCL C++ enabled fullspace and halfspace triangle dislocation elements (TDEs), benchmarked at 130 million TDEs per second. `cutde` is a translation and optimization of the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software). In addition to the basic pair-wise TDE operations for displacement and strain, `cutde` also has:
+**cutde**: CUDA, OpenCL and C++ enabled fullspace and halfspace triangle dislocation elements (TDEs), benchmarked at 130 million TDEs per second. `cutde` is a translation and optimization of the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software). In addition to the basic pair-wise TDE operations for displacement and strain, `cutde` also has:
 * all pairs matrix construction functions.
 * matrix free functions for low memory usage settings.
 * block-wise functions that are especially helpful in an FMM or hierarchical matrix setting.
 * an adaptive cross approximation implementation for building hierarchical matrices.
 
-See below for basic usage and installation instructions. For more realistic usage examples, please check out [the TDE sequence in the BIE book](https://tbenthompson.com/book/tde_intro.html). You'll find examples of using all the above variants.
+See below for basic usage and installation instructions. For more realistic usage examples, please check out [the TDE examples in these BIE tutorials](https://tbenthompson.com/book/tdes/sa_tdes.html). You'll find examples of using all the above variants.
+
 
 <!--ts-->
 <!--te-->
