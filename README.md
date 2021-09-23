@@ -16,7 +16,7 @@
 * block-wise functions that are especially helpful in an FMM or hierarchical matrix setting.
 * an adaptive cross approximation implementation for building hierarchical matrices.
 
-See below for basic usage and installation instructions. For more realistic usage examples, please check out [the TDE sequence in the BIE book](https://tbenthompson.com/book/tde_intro.html). You'll find examples of using all the above variants.
+See below for basic usage and installation instructions. For more realistic usage examples, please check out [the TDE examples in these BIE tutorials](https://tbenthompson.com/book/tdes/sa_tdes.html). You'll find examples of using all the above variants.
 
 <!--ts-->
    * [Python + CUDA TDEs from Nikkhoo and Walter 2015](#python--cuda-tdes-from-nikkhoo-and-walter-2015)
