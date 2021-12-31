@@ -120,8 +120,8 @@ def call_clu_aca(
         gpu_obs_end = backend.to(obs_end[chunk_start:chunk_end], np.int32)
         gpu_src_start = backend.to(src_start[chunk_start:chunk_end], np.int32)
         gpu_src_end = backend.to(src_end[chunk_start:chunk_end], np.int32)
-        gpu_tol = backend.to(tol, float_type)
-        gpu_max_iter = backend.to(max_iter, np.int32)
+        gpu_tol = backend.to(tol[chunk_start:chunk_end], float_type)
+        gpu_max_iter = backend.to(max_iter[chunk_start:chunk_end], np.int32)
 
         if verbose:
             print(f"gpu_buffer.shape = {gpu_buffer.shape}")
