@@ -1,3 +1,13 @@
+[build-system]
+requires = [
+  'setuptools',
+  'setuptools-scm',
+  'wheel',
+  'pybind11',
+  'mako',
+  'numpy'
+]
+
 [tool.isort]
 profile = "black"
 
