@@ -161,7 +161,13 @@ y = U.dot(V.dot(x))
 
 # Installation
 
-To install `cutde` itself run:
+Installing from conda-forge is preferable because there should be fewer issues involving compilers. To install `cutde` from conda-forge:
+```
+conda install -c conda-forge cutde
+```
+
+or to install from pypi with pip:
+```
 ```
 pip install cutde
 ```

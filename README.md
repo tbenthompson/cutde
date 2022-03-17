@@ -44,18 +44,8 @@ See below for basic usage and installation instructions. For more realistic usag
    * [Block-wise interaction matrices](#block-wise-interaction-matrices)
    * [Adaptive cross approximation (ACA)](#adaptive-cross-approximation-aca)
 * [Installation](#installation)
-   * [GPU installation](#gpu-installation)
-      * [PyCUDA](#pycuda)
-      * [Mac OS X](#mac-os-x)
-      * [Ubuntu + PyOpenCL/PoCL](#ubuntu--pyopenclpocl)
-      * [Ubuntu + PyOpenCL with system drivers](#ubuntu--pyopencl-with-system-drivers)
-      * [Windows](#windows)
-      * [Something else](#something-else)
-      * [Why can't I use Apple CPU OpenCL?](#why-cant-i-use-apple-cpu-opencl)
-* [Development](#development)
-   * [Architecture](#architecture)
 
-<!-- Added by: tbent, at: Thu Mar 17 09:08:46 EDT 2022 -->
+<!-- Added by: tbent, at: Thu Mar 17 09:11:26 EDT 2022 -->
 
 <!--te-->
 
@@ -215,7 +205,13 @@ y = U.dot(V.dot(x))
 
 # Installation
 
-To install `cutde` itself run:
+Installing from conda-forge is preferable because there should be fewer issues involving compilers. To install `cutde` from conda-forge:
+```
+conda install -c conda-forge cutde
+```
+
+or to install from pypi with pip:
+```
 ```
 pip install cutde
 ```
