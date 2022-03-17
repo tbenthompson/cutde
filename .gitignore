@@ -12,3 +12,5 @@ dist
 *.rendered
 .rendered*
 *.so
+.DS_Store
+.vim
