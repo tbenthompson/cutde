@@ -1,7 +1,22 @@
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+<!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
+
 <p align=center>
     <a target="_blank" href="https://www.python.org/downloads/" title="Python version"><img src="https://img.shields.io/badge/python-%3E=_3.7-green.svg"></a>
     <a target="_blank" href="https://pypi.org/project/cutde/" title="PyPI version"><img src="https://img.shields.io/pypi/v/cutde?logo=pypi"></a>
-    <!-- <a target="_blank" href="https://pypi.org/project/cutde/" title="PyPI"><img src="https://img.shields.io/pypi/dm/cutde"></a> -->
+    <a target="_blank" href="https://anaconda.org/conda-forge/cutde" title="conda-forge"><img src="https://img.shields.io/conda/dn/conda-forge/cutde"></a>
     <a target="_blank" href="LICENSE" title="License: MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
     <a target="_blank" href="https://github.com/tbenthompson/cutde/actions" title="Test Status"><img src="https://github.com/tbenthompson/cutde/actions/workflows/test.yml/badge.svg"></a>
 </a>
@@ -20,27 +35,27 @@ See below for basic usage and installation instructions. For more realistic usag
 
 
 <!--ts-->
-   * [Python CPU and GPU accelerated TDEs, over 100 million TDEs per second!](#python-cpu-and-gpu-accelerated-tdes-over-100-million-tdes-per-second)
-   * [Usage documentation](#usage-documentation)
-      * [Simple pair-wise TDEs](#simple-pair-wise-tdes)
-      * [I want stress.](#i-want-stress)
-      * [All pairs interactions matrix](#all-pairs-interactions-matrix)
-      * [Matrix-free all pairs interactions](#matrix-free-all-pairs-interactions)
-      * [Block-wise interaction matrices](#block-wise-interaction-matrices)
-      * [Adaptive cross approximation (ACA)](#adaptive-cross-approximation-aca)
-   * [Installation](#installation)
-      * [GPU installation](#gpu-installation)
-         * [PyCUDA](#pycuda)
-         * [Mac OS X](#mac-os-x)
-         * [Ubuntu + PyOpenCL/PoCL](#ubuntu--pyopenclpocl)
-         * [Ubuntu + PyOpenCL with system drivers](#ubuntu--pyopencl-with-system-drivers)
-         * [Windows](#windows)
-         * [Something else](#something-else)
-         * [Why can't I use Apple CPU OpenCL?](#why-cant-i-use-apple-cpu-opencl)
-   * [Development](#development)
-      * [Architecture](#architecture)
+* [Python CPU and GPU accelerated TDEs, over 100 million TDEs per second!](#python-cpu-and-gpu-accelerated-tdes-over-100-million-tdes-per-second)
+* [Usage documentation](#usage-documentation)
+   * [Simple pair-wise TDEs](#simple-pair-wise-tdes)
+   * [I want stress.](#i-want-stress)
+   * [All pairs interactions matrix](#all-pairs-interactions-matrix)
+   * [Matrix-free all pairs interactions](#matrix-free-all-pairs-interactions)
+   * [Block-wise interaction matrices](#block-wise-interaction-matrices)
+   * [Adaptive cross approximation (ACA)](#adaptive-cross-approximation-aca)
+* [Installation](#installation)
+   * [GPU installation](#gpu-installation)
+      * [PyCUDA](#pycuda)
+      * [Mac OS X](#mac-os-x)
+      * [Ubuntu + PyOpenCL/PoCL](#ubuntu--pyopenclpocl)
+      * [Ubuntu + PyOpenCL with system drivers](#ubuntu--pyopencl-with-system-drivers)
+      * [Windows](#windows)
+      * [Something else](#something-else)
+      * [Why can't I use Apple CPU OpenCL?](#why-cant-i-use-apple-cpu-opencl)
+* [Development](#development)
+   * [Architecture](#architecture)
 
-<!-- Added by: tbent, at: Thu 23 Sep 2021 01:30:01 PM EDT -->
+<!-- Added by: tbent, at: Thu Mar 17 09:08:46 EDT 2022 -->
 
 <!--te-->
 
