@@ -1,3 +1,11 @@
+"""
+Setting up to run this script:
+- install github-release from
+   https://github.com/github-release/github-release/releases/tag/v0.10.0
+- create a github token and set the GITHUB_TOKEN environment variable
+- activate your conda environment.
+"""
+
 import datetime
 import os
 import subprocess
@@ -25,6 +33,7 @@ run(["rm", "-r", "dist"])
 run(["python", "setup.py", "sdist"])
 
 # Set the version and sha in the conda meta.yaml
+
 package_path = os.path.join("dist", os.listdir("dist")[0])
 raw_sha256 = subprocess.check_output(
     f"openssl sha256 {package_path} | sed 's/^.* //'", shell=True
