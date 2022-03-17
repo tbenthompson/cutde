@@ -146,7 +146,7 @@ def runner(
                 np.testing.assert_almost_equal(V, V2, 9)
 
         diff = block - U2.dot(V2)
-        diff_frob = np.sqrt(np.sum(diff ** 2))
+        diff_frob = np.sqrt(np.sum(diff**2))
         assert diff_frob < 1e-3
 
 

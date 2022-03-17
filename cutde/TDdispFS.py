@@ -156,7 +156,7 @@ def AngDisDisp(x, y, z, alpha, bx, by, bz, nu):
     sinA = np.sin(alpha)
     eta = y * cosA - z * sinA
     zeta = y * sinA + z * cosA
-    r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+    r = np.sqrt(x**2 + y**2 + z**2)
 
     # Avoid complex results for the logarithmic terms
     if zeta > r:
@@ -173,7 +173,7 @@ def AngDisDisp(x, y, z, alpha, bx, by, bz, nu):
         * (
             eta * sinA / (r - zeta)
             - y * eta / r / (r - zeta)
-            + y ** 2 / r / (r - z)
+            + y**2 / r / (r - z)
             + (1 - 2 * nu) * (cosA * np.log(r - zeta) - np.log(r - z))
         )
     )
@@ -196,8 +196,8 @@ def AngDisDisp(x, y, z, alpha, bx, by, bz, nu):
         / np.pi
         / (1 - nu)
         * (
-            x ** 2 * cosA / r / (r - zeta)
-            - x ** 2 / r / (r - z)
+            x**2 * cosA / r / (r - zeta)
+            - x**2 / r / (r - z)
             - (1 - 2 * nu) * (cosA * np.log(r - zeta) - np.log(r - z))
         )
     )
@@ -215,7 +215,7 @@ def AngDisDisp(x, y, z, alpha, bx, by, bz, nu):
         / 8
         / np.pi
         / (1 - nu)
-        * (z * cosA / r / (r - zeta) - cosA ** 2 / (r - zeta) + 1 / r)
+        * (z * cosA / r / (r - zeta) - cosA**2 / (r - zeta) + 1 / r)
     )
 
     uz = (
@@ -224,7 +224,7 @@ def AngDisDisp(x, y, z, alpha, bx, by, bz, nu):
         / 8
         / np.pi
         / (1 - nu)
-        * ((1 - 2 * nu) * np.log(r - zeta) - x ** 2 / r / (r - zeta))
+        * ((1 - 2 * nu) * np.log(r - zeta) - x**2 / r / (r - zeta))
     )
     vz = bz * x * sinA / 8 / np.pi / (1 - nu) * (sinA / (r - zeta) - y / r / (r - zeta))
     wz = bz * x * sinA / 8 / np.pi / (1 - nu) * (cosA / (r - zeta) - z / r / (r - zeta))
@@ -303,9 +303,9 @@ def TDdispFS(obs, tri, slip, nu):
             transformed_tri[2][2] - transformed_obs[2],
         ]
     )
-    na = np.sqrt(np.sum(a ** 2))
-    nb = np.sqrt(np.sum(b ** 2))
-    nc = np.sqrt(np.sum(c ** 2))
+    na = np.sqrt(np.sum(a**2))
+    nb = np.sqrt(np.sum(b**2))
+    nc = np.sqrt(np.sum(c**2))
 
     FiN = (
         a[0] * (b[1] * c[2] - b[2] * c[1])
