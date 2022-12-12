@@ -25,7 +25,7 @@
 
 #  Python CPU and GPU accelerated TDEs, over 100 million TDEs per second! 
 
-**Note from Dec 2022**: The code here work beautifully and should hopefully continue to do so for a long time. But I no longer maintain this project. I would be happy to [chat or email](tbenthompson.com) to help anyone who wants to dive in. For the biggest potential improvement, see this issue: https://github.com/tbenthompson/cutde/issues/23
+**Note from Dec 2022**: The code here work beautifully and should hopefully continue to do so for a long time. But I no longer maintain this project. I would be happy to [chat or email](http://www.tbenthompson.com) to help anyone who wants to dive in. For the biggest potential improvement, see this issue: https://github.com/tbenthompson/cutde/issues/23
 
 **cutde**: CUDA, OpenCL and C++ enabled fullspace and halfspace triangle dislocation elements (TDEs), benchmarked at 130 million TDEs per second. `cutde` is a translation and optimization of the [original MATLAB code from Nikhoo and Walter 2015.](https://volcanodeformation.com/software). In addition to the basic pair-wise TDE operations for displacement and strain, `cutde` also has:
 * all pairs matrix construction functions.
