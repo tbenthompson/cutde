@@ -19,6 +19,7 @@
     <a target="_blank" href="https://anaconda.org/conda-forge/cutde" title="conda-forge"><img src="https://img.shields.io/conda/dn/conda-forge/cutde"></a>
     <a target="_blank" href="LICENSE" title="License: MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
     <a target="_blank" href="https://github.com/tbenthompson/cutde/actions" title="Test Status"><img src="https://github.com/tbenthompson/cutde/actions/workflows/test.yml/badge.svg"></a>
+    <a href="https://zenodo.org/badge/latestdoi/132957124"><img src="https://zenodo.org/badge/132957124.svg" alt="DOI"></a>
 </a>
 
 <!--STOP, MAKE SURE YOU ARE EDITING docs/README-tmpl.md and not README.md-->
@@ -46,8 +47,18 @@ See below for basic usage and installation instructions. For more realistic usag
    * [Block-wise interaction matrices](#block-wise-interaction-matrices)
    * [Adaptive cross approximation (ACA)](#adaptive-cross-approximation-aca)
 * [Installation](#installation)
+   * [GPU installation](#gpu-installation)
+      * [PyCUDA](#pycuda)
+      * [Mac OS X](#mac-os-x)
+      * [Ubuntu + PyOpenCL/PoCL](#ubuntu--pyopenclpocl)
+      * [Ubuntu + PyOpenCL with system drivers](#ubuntu--pyopencl-with-system-drivers)
+      * [Windows](#windows)
+      * [Something else](#something-else)
+      * [Why can't I use Apple CPU OpenCL?](#why-cant-i-use-apple-cpu-opencl)
+* [Development](#development)
+   * [Architecture](#architecture)
 
-<!-- Added by: tbent, at: Thu Mar 17 09:11:26 EDT 2022 -->
+<!-- Added by: tbent, at: Wed Jan 11 09:50:45 MST 2023 -->
 
 <!--te-->
 
