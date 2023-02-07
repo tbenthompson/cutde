@@ -13,7 +13,6 @@ from cutde.coordinators import (
 
 
 def check_tol_max_iter(obs_start, tol, max_iter, float_type):
-
     tol = np.array(tol)
     if tol.shape[0] != obs_start.shape[0]:
         raise ValueError("The length of tol must match obs_start.")
