@@ -41,6 +41,15 @@ def get_halfspace_test():
     return correct, obs_pts, tri, slip
 
 
+def get_halfspace_horizontal_test():
+    correct = scipy.io.loadmat("tests/result_halfspace_horizontal.mat")
+    tri = np.array([[-1, 0, -1], [1, 0.2, -1.0], [1, 0.2, -2]])
+    slip = [1.0, 0.0, 0.0]
+    obs_pts = get_pt_grid()
+    obs_pts[:, 2] -= 3
+    return correct, obs_pts, tri, slip
+
+
 def py_tde_tester(setup_fnc, N_test=-1):
     correct, test_pts, tri, slip = setup_fnc()
 
@@ -121,6 +130,26 @@ def test_cluda_simple():
 
 def test_halfspace():
     correct, test_pts, tri, slip = get_halfspace_test()
+
+    N_test = None
+    if N_test is None:
+        N_test = correct["UEf"].shape[0]
+
+    tris = np.array([tri] * N_test, dtype=np.float64)
+    slips = np.array([slip] * N_test)
+
+    nu = 0.25
+    disp = HS.disp(test_pts[:N_test], tris, slips, nu)
+    strain = HS.strain(test_pts[:N_test], tris, slips, nu)
+
+    np.testing.assert_almost_equal(disp[:, 0], correct["UEf"][:N_test, 0])
+    np.testing.assert_almost_equal(disp[:, 1], correct["UNf"][:N_test, 0])
+    np.testing.assert_almost_equal(disp[:, 2], correct["UVf"][:N_test, 0])
+    np.testing.assert_almost_equal(strain, correct["Strain"][:N_test])
+
+
+def test_halfspace_horizontal():
+    correct, test_pts, tri, slip = get_halfspace_horizontal_test()
 
     N_test = None
     if N_test is None:

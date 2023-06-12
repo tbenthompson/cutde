@@ -395,6 +395,9 @@ WITHIN_KERNEL Real3 AngDisDispFSC(Real y1, Real y2, Real y3, Real beta,
 
     Real sinB = sin(beta);
     Real cosB = cos(beta);
+    if (cosB == 0.) {
+        cosB = EPS;
+    }
     Real cotB = cosB / sinB;
     Real y3b = y3+2*a;
     Real z1b = y1*cosB+y3b*sinB;
