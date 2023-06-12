@@ -43,10 +43,18 @@ def get_halfspace_test():
 
 def get_halfspace_horizontal_test():
     correct = scipy.io.loadmat("tests/result_halfspace_horizontal.mat")
-    tri = np.array([[-1, 0, -1], [1, 0.2, -1.0], [1, 0.2, -2]])
-    slip = [1.0, 0.0, 0.0]
+    tri = np.array([[-1, 0, -1], [1, 0.0, -1], [0, 1.0, -1]])
+    slip = [1.0, 0.5, -0.3]
     obs_pts = get_pt_grid()
     obs_pts[:, 2] -= 3
+    return correct, obs_pts, tri, slip
+
+
+def get_fullspace_horizontal_test():
+    correct = scipy.io.loadmat("tests/result_fullspace_horizontal.mat")
+    tri = np.array([[-1, 0, -1], [1, 0.0, -1], [0, 1.0, -1]])
+    slip = [1.0, 0.5, -0.3]
+    obs_pts = get_pt_grid()
     return correct, obs_pts, tri, slip
 
 
@@ -148,8 +156,14 @@ def test_halfspace():
     np.testing.assert_almost_equal(strain, correct["Strain"][:N_test])
 
 
-def test_halfspace_horizontal():
-    correct, test_pts, tri, slip = get_halfspace_horizontal_test()
+@pytest.mark.parametrize("module_name", ["HS", "FS"])
+def test_horizontal(module_name):
+    if module_name == "HS":
+        correct, test_pts, tri, slip = get_halfspace_horizontal_test()
+        module = HS
+    else:
+        correct, test_pts, tri, slip = get_fullspace_horizontal_test()
+        module = FS
 
     N_test = None
     if N_test is None:
@@ -159,8 +173,8 @@ def test_halfspace_horizontal():
     slips = np.array([slip] * N_test)
 
     nu = 0.25
-    disp = HS.disp(test_pts[:N_test], tris, slips, nu)
-    strain = HS.strain(test_pts[:N_test], tris, slips, nu)
+    disp = module.disp(test_pts[:N_test], tris, slips, nu)
+    strain = module.strain(test_pts[:N_test], tris, slips, nu)
 
     np.testing.assert_almost_equal(disp[:, 0], correct["UEf"][:N_test, 0])
     np.testing.assert_almost_equal(disp[:, 1], correct["UNf"][:N_test, 0])
