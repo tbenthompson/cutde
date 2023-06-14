@@ -4,7 +4,8 @@ import numpy as np
 from scipy.sparse.linalg import gmres
 
 import cutde
-import cutde.gpu
+from cutde import cuda as gpu
+from cutde import halfspace as HS
 
 
 def surface(n_els_per_dim):
@@ -37,9 +38,9 @@ def surface(n_els_per_dim):
 
 def main():
     pts, tris, slips = surface(50)
-    pts = cutde.gpu.to_gpu(pts, np.float32)
-    tris = cutde.gpu.to_gpu(tris, np.float32)
-    slips = cutde.gpu.to_gpu(slips, np.float32)
+    pts = gpu.to(pts, np.float32)
+    tris = gpu.to(tris, np.float32)
+    slips = gpu.to(slips, np.float32)
 
     pairs = pts.shape[0] * tris.shape[0] / 1e6
 
@@ -53,13 +54,13 @@ def main():
         return out
 
     print("profiling matrix")
-    profile(lambda: cutde.strain_matrix(pts, tris, 0.25))
+    profile(lambda: HS.strain_matrix(pts, tris, 0.25))
 
     print("profiling matrix free")
-    profile(lambda: cutde.strain_free(pts, tris, slips, 0.25))
+    profile(lambda: HS.strain_free(pts, tris, slips, 0.25))
 
     print("profiling matrix vector product")
-    disp_mat = cutde.disp_matrix(pts, tris, 0.25)
+    disp_mat = HS.disp_matrix(pts, tris, 0.25)
     disp_mat2d = disp_mat.reshape((pts.shape[0] * 3, tris.shape[0] * 3))
     slips_np = slips.get().flatten()
     profile(lambda: disp_mat2d.dot(slips_np))
