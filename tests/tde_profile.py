@@ -3,7 +3,6 @@ import time
 import numpy as np
 from scipy.sparse.linalg import gmres
 
-import cutde
 from cutde import backend
 from cutde import halfspace as HS
 
