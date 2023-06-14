@@ -4,7 +4,7 @@ import numpy as np
 from scipy.sparse.linalg import gmres
 
 import cutde
-from cutde import cuda as gpu
+from cutde import backend
 from cutde import halfspace as HS
 
 
@@ -37,10 +37,11 @@ def surface(n_els_per_dim):
 
 
 def main():
+    print("Cutde is using the '%s' backend" % backend.which_backend)
     pts, tris, slips = surface(50)
-    pts = gpu.to(pts, np.float32)
-    tris = gpu.to(tris, np.float32)
-    slips = gpu.to(slips, np.float32)
+    pts = backend.to(pts, np.float32)
+    tris = backend.to(tris, np.float32)
+    slips = backend.to(slips, np.float32)
 
     pairs = pts.shape[0] * tris.shape[0] / 1e6
 
