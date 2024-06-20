@@ -9,9 +9,9 @@ gpu_module = dict()
 
 
 def compare(a, b):
-    if type(a) != type(b):
+    if isinstance(a, type(b)):
         return False
-    if type(a) is list or type(a) is tuple:
+    if isinstance(a, list) or isinstance(a, tuple):
         if len(a) != len(b):
             return False
         comparisons = [compare(av, bv) for av, bv in zip(a, b)]
