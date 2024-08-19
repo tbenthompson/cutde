@@ -292,6 +292,8 @@ For developing `cutde`, clone the repo and set up your conda environment based o
 conda env create
 ```
 
+Then, `pip install -e .`.
+
 Next, for developing on a GPU, please install either `pycuda` or `pyopencl` as instructed in the Installation section above.
 
 Then, you should re-generate the baseline test data derived from [the MATLAB code from Mehdi Nikhoo](https://volcanodeformation.com/software). To do this, first install `octave`. On Ubuntu, this is just:

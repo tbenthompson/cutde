@@ -2,6 +2,7 @@
 This Python ACA implementation is included here in order to help test the
 OpenCL/CUDA implementation in cutde.
 """
+
 import numpy as np
 
 
@@ -184,9 +185,9 @@ def ACA_plus(
         if verbose:
             print(
                 f"term={k}, "
-                f"pivot row={Istar:4d}, pivot col={Jstar:4d}, "
-                f"step size={step_size:1.3e}, "
-                f"tolerance={eps:1.3e}"
+                f"pivot row={Istar: 4d}, pivot col={Jstar: 4d}, "
+                f"step size={step_size: 1.3e}, "
+                f"tolerance={eps: 1.3e}"
             )
 
         # The convergence criteria will simply be whether the Frobenius norm of the
